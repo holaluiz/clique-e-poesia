@@ -3,8 +3,6 @@ import { StickyNavbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
 import { AboutPeopleSection } from "./components/AboutPeopleSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
-import { PeoplePhotographySection } from "./components/PeoplePhotographySection";
-import { BlogSection } from "./components/BlogSection";
 import { ClosingSection } from "./components/ClosingSection";
 
 export default function App() {
@@ -23,13 +21,7 @@ export default function App() {
         {/* Galeria de fotografias reais do portfólio. */}
         <PortfolioGallerySection />
 
-        {/* 4. People / Portrait Photography (Mas e as pessoas? :)) */}
-        <PeoplePhotographySection />
-
-        {/* 5. Blog (Nosso Blog) */}
-        <BlogSection />
-
-        {/* 6. Closing (E no fim...) */}
+        {/* Fechamento (E no fim...) */}
         <ClosingSection />
       </main>
     </div>
