@@ -14,28 +14,12 @@ export const AboutPeopleSection: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-[1200px] mx-auto">
         {/* ========================================================================= */}
-        {/* PARTE 1 — CABEÇALHO EDITORIAL ABERTO & ASSIMÉTRICO (SEM BORDAS/LINHAS)    */}
+        {/* PARTE 1 — CABEÇALHO EDITORIAL                                             */}
         {/* ========================================================================= */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 sm:pb-10">
-          <div className="space-y-3 max-w-2xl">
-            {/* Micro-label editorial padronizado (11-13px, sans-serif medium, tracking moderado) */}
-            <div className="text-[11px] sm:text-[12px] font-sans font-medium tracking-[0.2em] text-[#7B7955] uppercase leading-none">
-              MAS QUEM É A GENTE? :)
-            </div>
-
-            {/* Headline expressiva com escala unificada Section Display clamp(48px, 5vw, 76px) */}
-            <h2 className="font-serif text-[clamp(3rem,5vw,4.75rem)] font-normal text-[#171713] leading-[1.04] tracking-[-0.025em]">
-              “Duas pessoas, uma câmera
-              <br className="hidden sm:inline" />
-              {" "}e um caderno de poesia”
-            </h2>
-          </div>
-
-          {/* Micro-indicador de edição editorial em texto puro */}
-          <div className="hidden md:flex flex-col items-end text-right text-[11px] sm:text-[12px] font-sans font-medium tracking-[0.18em] text-[#7B7955] uppercase leading-snug">
-            <span>Ensaio Autoral</span>
-            <span className="font-serif italic text-[#98734F] lowercase tracking-normal text-[14px] pt-0.5">sobre olhar e afeto</span>
-          </div>
+        <div className="pb-6 sm:pb-10">
+          <h2 className="font-serif text-[clamp(2.5rem,4vw,3.75rem)] font-normal text-[#171713] leading-[1.08] tracking-[-0.025em]">
+            Mas quem é a gente? :)
+          </h2>
         </div>
 
         {/* ========================================================================= */}
