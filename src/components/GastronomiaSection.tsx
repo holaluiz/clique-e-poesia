@@ -59,9 +59,6 @@ export const GastronomiaSection: React.FC = () => (
       </>,
     ]}
     photos={PHOTOS}
-    decoration={
-      // Espelhado: o prato ocupa o vazio sob a última foto e a linha corre para a esquerda.
-      <CutleryLineArt className="absolute bottom-6 sm:bottom-10 right-0 w-full min-w-[720px] -scale-x-100 text-[#d6b985] opacity-45" />
-    }
+    decoration={<CutleryLineArt />}
   />
 );

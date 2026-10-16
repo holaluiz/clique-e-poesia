@@ -28,7 +28,7 @@ interface EditorialPhotoSectionProps {
   category: PortfolioCategory;
   /** Foto de fundo nítida, escurecida pela cor da seção (como a hero). */
   backdrop?: string;
-  /** Ilustração decorativa atrás do conteúdo (posicionada por quem a passa). */
+  /** Ilustração de ponta a ponta, presa ao pé da seção e atrás das fotos. */
   decoration?: React.ReactNode;
 }
 
@@ -104,7 +104,11 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
     <section
       id={id}
       aria-labelledby={headingId}
-      className={`relative py-24 sm:py-32 lg:py-36 px-6 sm:px-10 lg:px-16 overflow-hidden ${colors.section}`}
+      // Com ilustração, o respiro inferior acompanha a largura (como ela), para que as fotos
+      // cubram sempre a mesma fração do desenho em qualquer tela.
+      className={`relative pt-24 sm:pt-32 lg:pt-36 ${
+        decoration ? "pb-[9.5vw]" : "pb-24 sm:pb-32 lg:pb-36"
+      } px-6 sm:px-10 lg:px-16 overflow-hidden ${colors.section}`}
     >
       {/* Foto de fundo escurecida; o degradê funde só as bordas com as seções vizinhas. */}
       {backdrop && (
@@ -120,7 +124,7 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
         </div>
       )}
       {decoration && (
-        <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 pointer-events-none">
           {decoration}
         </div>
       )}
