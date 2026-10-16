@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 // O texto vem do editor visual do painel como HTML. Antes de exibir, o DOMPurify remove qualquer
 // coisa perigosa (scripts, eventos, iframes); depois as fotos com legenda viram <figure>.
 const ALLOWED_TAGS = [
-  "p", "br", "h2", "h3", "strong", "b", "em", "i", "u", "s", "a",
+  "p", "br", "h2", "h3", "strong", "b", "em", "i", "u", "s", "a", "span",
   "ul", "ol", "li", "blockquote", "hr", "img", "figure", "figcaption",
 ];
 const ALLOWED_ATTR = ["href", "target", "rel", "src", "alt", "title", "style", "loading"];
@@ -19,11 +19,12 @@ function toSafeHtml(content: string) {
 
   const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR, RETURN_DOM_FRAGMENT: true });
 
-  clean.querySelectorAll("[style]").forEach((element) => {
-    // Só o alinhamento do texto passa; outros estilos colados de fora são descartados.
-    const align = (element as HTMLElement).style.textAlign;
+  clean.querySelectorAll<HTMLElement>("[style]").forEach((element) => {
+    // Só o alinhamento e a cor do texto passam; outros estilos colados de fora são descartados.
+    const { textAlign, color } = element.style;
     element.removeAttribute("style");
-    if (align && ["left", "center", "right", "justify"].includes(align)) (element as HTMLElement).style.textAlign = align;
+    if (["left", "center", "right", "justify"].includes(textAlign)) element.style.textAlign = textAlign;
+    if (/^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\)|[a-z]+)$/i.test(color)) element.style.color = color;
   });
 
   // Link externo (escolhido no editor) abre em nova aba; interno abre na mesma.

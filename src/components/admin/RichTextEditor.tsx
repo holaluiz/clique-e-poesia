@@ -3,7 +3,9 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
+import { Color, TextStyle } from "@tiptap/extension-text-style";
 import { Placeholder } from "@tiptap/extensions";
+import { ColorPicker } from "./ColorPicker";
 import { LinkDialog, type LinkValue } from "./LinkDialog";
 import {
   AlignCenter,
@@ -126,6 +128,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
       }),
       Image.configure({ HTMLAttributes: { loading: "lazy" } }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TextStyle,
+      Color,
       Placeholder.configure({ placeholder: "Comece a contar como foi a experiência…" }),
     ],
     content: value,
@@ -182,6 +186,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
       italic: e.isActive("italic"),
       underline: e.isActive("underline"),
       strike: e.isActive("strike"),
+      color: e.getAttributes("textStyle").color as string | undefined,
       bulletList: e.isActive("bulletList"),
       orderedList: e.isActive("orderedList"),
       blockquote: e.isActive("blockquote"),
@@ -241,6 +246,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <ToolButton label="Itálico (Ctrl+I)" icon={Italic} onClick={() => chain().toggleItalic().run()} active={state.italic} />
         <ToolButton label="Sublinhado (Ctrl+U)" icon={Underline} onClick={() => chain().toggleUnderline().run()} active={state.underline} />
         <ToolButton label="Riscado" icon={Strikethrough} onClick={() => chain().toggleStrike().run()} active={state.strike} />
+        <ColorPicker
+          value={state.color}
+          onChange={(color) => chain().setColor(color).run()}
+          onReset={() => chain().unsetColor().run()}
+        />
         <Divider />
         <ToolButton label="Lista com marcadores" icon={List} onClick={() => chain().toggleBulletList().run()} active={state.bulletList} />
         <ToolButton label="Lista numerada" icon={ListOrdered} onClick={() => chain().toggleOrderedList().run()} active={state.orderedList} />
