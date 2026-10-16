@@ -3,6 +3,7 @@ import { StickyNavbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
 import { AboutPeopleSection } from "./components/AboutPeopleSection";
 import { ECliqueSection } from "./components/ECliqueSection";
+import { PessoasSection } from "./components/PessoasSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { ClosingSection } from "./components/ClosingSection";
 
@@ -21,6 +22,9 @@ export default function App() {
 
         {/* E a Clique? — o que a gente faz */}
         <ECliqueSection />
+
+        {/* Mas e as pessoas? — retratos */}
+        <PessoasSection />
 
         {/* Galeria de fotografias reais do portfólio. */}
         <PortfolioGallerySection />
