@@ -53,9 +53,16 @@
   margin-inline: 4px;
 }
 
+/* Colunas montadas no componente (coluna mais curta), para "Ver mais" não reembaralhar a grade. */
 .clique-gallery-grid {
-  columns: 4 16rem;
+  display: flex;
+  align-items: flex-start;
   column-gap: clamp(12px, 1.4vw, 24px);
+}
+
+.clique-gallery-column {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .clique-gallery-item {
@@ -222,10 +229,6 @@
 }
 
 @media (max-width: 639px) {
-  .clique-gallery-grid {
-    columns: 2;
-  }
-
   .clique-gallery-header h2 {
     font-size: clamp(42px, 10vw, 60px);
     line-height: 1.15;
