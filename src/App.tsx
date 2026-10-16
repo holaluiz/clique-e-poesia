@@ -11,6 +11,7 @@ import { BlogIndexPage, BlogPostPage } from "./components/blog/BlogPages";
 import { AdminPage } from "./components/admin/AdminPage";
 import { ClosingSection } from "./components/ClosingSection";
 import { usePathname } from "./lib/router";
+import { useSmoothScroll } from "./lib/useSmoothScroll";
 
 function HomePage() {
   return (
@@ -49,6 +50,7 @@ function HomePage() {
 
 export default function App() {
   const path = usePathname();
+  useSmoothScroll();
 
   if (path === "/admin" || path.startsWith("/admin/")) return <AdminPage path={path} />;
   if (path === "/blog") return <BlogIndexPage />;

@@ -152,7 +152,7 @@ function Navigation({
         <span className="site-menu-icon" aria-hidden="true"><span /><span /></span>
       </button>
       {mobileMenuOpen && (
-        <div id={menuId} className="site-mobile-panel">
+        <div id={menuId} className="site-mobile-panel" data-lenis-prevent>
           <p className="site-mobile-label">Nosso universo</p>
           <ul className="site-mobile-links">
             {navLinks.map(({ name, href }) => (

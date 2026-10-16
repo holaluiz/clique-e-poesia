@@ -113,6 +113,7 @@ export function PortfolioPhotoViewer({ project, initialIndex, onClose }: Portfol
     <dialog
       ref={dialogRef}
       className="portfolio-viewer"
+      data-lenis-prevent
       aria-labelledby={titleId}
       aria-describedby={captionId}
       onCancel={(event) => { event.preventDefault(); onClose(); }}
