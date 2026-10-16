@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { ChevronRight, ExternalLink, FilePlus2, FileText, Home, KeyRound, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { ChevronRight, ExternalLink, FilePlus2, FileText, Home, KeyRound, LayoutDashboard, LogOut, Menu, Tags, X } from "lucide-react";
 import { isBlogAdmin } from "../../lib/blog";
 import { handleLinkClick, navigate } from "../../lib/router";
+import { resetPageMeta, setPageMeta } from "../../lib/seo";
 import { supabase } from "../../lib/supabase";
+import { AdminCategories } from "./AdminCategories";
 import { AdminPostList } from "./AdminPostList";
 import { AdminPostEditor } from "./AdminPostEditor";
 import { AdminCard, Field, PrimaryButton, inputClass } from "./ui";
@@ -21,6 +23,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { label: "Textos", href: "/admin/textos", icon: FileText, match: (path) => path === "/admin/textos" || path.startsWith("/admin/texto/") },
       { label: "Novo texto", href: "/admin/novo", icon: FilePlus2 },
+      { label: "Categorias", href: "/admin/categorias", icon: Tags },
     ],
   },
   {
@@ -41,6 +44,7 @@ function pageInfo(path: string): { title: string; crumbs: string[] } {
   if (path === "/admin/textos") return { title: "Textos do blog", crumbs: ["Blog", "Textos"] };
   if (path === "/admin/novo") return { title: "Novo texto", crumbs: ["Blog", "Novo texto"] };
   if (path.startsWith("/admin/texto/")) return { title: "Editar texto", crumbs: ["Blog", "Textos", "Editar"] };
+  if (path === "/admin/categorias") return { title: "Categorias", crumbs: ["Blog", "Categorias"] };
   if (path === "/admin/senha") return { title: "Alterar senha", crumbs: ["Conta", "Alterar senha"] };
   return { title: "Painel Administrativo", crumbs: ["Dashboard"] };
 }
@@ -324,7 +328,11 @@ export const AdminPage: React.FC<{ path: string }> = ({ path }) => {
   const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
-    document.title = "Administrador — Clique e Poesia";
+    setPageMeta({ title: "Administrador — Clique e Poesia", noindex: true });
+    return resetPageMeta;
+  }, []);
+
+  useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -392,6 +400,7 @@ export const AdminPage: React.FC<{ path: string }> = ({ path }) => {
   if (path === "/admin/novo") content = <AdminPostEditor key="novo" postId={null} />;
   else if (editMatch) content = <AdminPostEditor key={editMatch[1]} postId={editMatch[1]} />;
   else if (path === "/admin/textos") content = <AdminPostList />;
+  else if (path === "/admin/categorias") content = <AdminCategories />;
   else if (path === "/admin/senha") content = <PasswordPage recovering={recovering} onDone={() => setRecovering(false)} />;
   else content = <Dashboard />;
 

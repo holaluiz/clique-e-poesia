@@ -14,6 +14,17 @@ import {
 import { handleLinkClick, navigate } from "../../lib/router";
 import { CoverCropDialog } from "./CoverCropDialog";
 import { RichTextEditor } from "./RichTextEditor";
+import {
+  CategoryPicker,
+  CharCount,
+  GooglePreview,
+  SEO_DESCRIPTION_LIMIT,
+  SEO_TITLE_LIMIT,
+  SettingsCard,
+  TagInput,
+  dateInputToIso,
+  isoToDateInput,
+} from "./PostSettings";
 import { Field, PrimaryButton, SecondaryButton, inputClass } from "./ui";
 
 const EMPTY: BlogPostDraft = {
@@ -25,11 +36,34 @@ const EMPTY: BlogPostDraft = {
   content: "",
   status: "draft",
   published_at: null,
+  category_ids: [],
+  tags: [],
+  seo_title: "",
+  seo_description: "",
 };
 
 function toDraft(post: BlogPost): BlogPostDraft {
-  const { title, slug, location, excerpt, cover_url, content, status, published_at } = post;
-  return { title, slug, location: location ?? "", excerpt: excerpt ?? "", cover_url, content, status, published_at };
+  return {
+    title: post.title,
+    slug: post.slug,
+    location: post.location ?? "",
+    excerpt: post.excerpt ?? "",
+    cover_url: post.cover_url,
+    content: post.content,
+    status: post.status,
+    published_at: post.published_at,
+    category_ids: post.category_ids ?? [],
+    tags: post.tags ?? [],
+    seo_title: post.seo_title ?? "",
+    seo_description: post.seo_description ?? "",
+  };
+}
+
+/** Texto puro do início do conteúdo, usado como descrição quando não há resumo nem descrição SEO. */
+function plainText(html: string) {
+  const element = document.createElement("div");
+  element.innerHTML = html;
+  return (element.textContent ?? "").replace(/s+/g, " ").trim();
 }
 
 function describeError(error: unknown) {
@@ -97,6 +131,8 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
         title: next.title.trim(),
         location: next.location?.trim() || null,
         excerpt: next.excerpt?.trim() || null,
+        seo_title: next.seo_title?.trim() || null,
+        seo_description: next.seo_description?.trim() || null,
       });
       const draft = toDraft(post);
       setForm(draft);
@@ -202,8 +238,22 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
           </p>
         </div>
 
-        <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-16">
-          <div className="rounded-[8px] bg-white border border-[#171713]/8 p-5 sm:p-6 space-y-5">
+        <aside className="lg:col-span-4 space-y-4">
+          <SettingsCard title="Publicação">
+            <Field
+              label="Data de publicação"
+              hint={form.published_at ? "Aparece no texto e define a ordem no blog." : "Vazia: usa a data do dia em que você publicar."}
+            >
+              <input
+                type="date"
+                value={isoToDateInput(form.published_at)}
+                onChange={(e) => update("published_at", dateInputToIso(e.target.value))}
+                className={inputClass}
+              />
+            </Field>
+          </SettingsCard>
+
+          <SettingsCard title="Configurações gerais">
             <div className="space-y-2">
               <span className="block text-[13px] font-medium text-[#171713]/80">
                 Foto de capa <span className="font-normal text-[#171713]/45">· {COVER_SIZE.width}×{COVER_SIZE.height}</span>
@@ -263,17 +313,57 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
               />
             </Field>
 
-            <Field label="Endereço da página" hint={<>{window.location.host}/blog/<strong>{form.slug || "…"}</strong></>}>
+            <CategoryPicker value={form.category_ids} onChange={(ids) => update("category_ids", ids)} />
+
+            <TagInput value={form.tags} onChange={(tags) => update("tags", tags)} />
+          </SettingsCard>
+
+          <SettingsCard title="SEO" description="Como o texto aparece no Google e quando o link é compartilhado.">
+            <label className="block space-y-1.5">
+              <span className="flex items-center justify-between text-[13px] font-medium text-[#171713]/80">
+                Título SEO <CharCount value={form.seo_title || form.title} limit={SEO_TITLE_LIMIT} />
+              </span>
+              <input
+                value={form.seo_title ?? ""}
+                onChange={(e) => update("seo_title", e.target.value)}
+                placeholder={form.title || "Usa o título do texto"}
+                className={inputClass}
+              />
+              <span className="block text-[12px] text-[#171713]/50">Vazio: usa o título do texto. Ideal até {SEO_TITLE_LIMIT} caracteres.</span>
+            </label>
+
+            <label className="block space-y-1.5">
+              <span className="flex items-center justify-between text-[13px] font-medium text-[#171713]/80">
+                Descrição SEO <CharCount value={form.seo_description || form.excerpt || ""} limit={SEO_DESCRIPTION_LIMIT} />
+              </span>
+              <textarea
+                rows={3}
+                value={form.seo_description ?? ""}
+                onChange={(e) => update("seo_description", e.target.value)}
+                placeholder={form.excerpt || "Usa o resumo do texto"}
+                className={`${inputClass} resize-y`}
+              />
+              <span className="block text-[12px] text-[#171713]/50">Vazia: usa o resumo. Ideal até {SEO_DESCRIPTION_LIMIT} caracteres.</span>
+            </label>
+
+            <Field label="Endereço da página (URL)" hint={<>{window.location.host}/blog/<strong>{form.slug || "…"}</strong></>}>
               <input
                 value={form.slug}
                 onChange={(e) => {
                   setSlugTouched(true);
-                  update("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"));
+                  update("slug", e.target.value.toLowerCase().replace(/s+/g, "-"));
                 }}
                 className={inputClass}
               />
             </Field>
-          </div>
+
+            <GooglePreview
+              title={form.seo_title?.trim() || form.title}
+              description={form.seo_description?.trim() || form.excerpt?.trim() || plainText(form.content).slice(0, SEO_DESCRIPTION_LIMIT)}
+              url={`${window.location.host} › blog › ${form.slug || "…"}`}
+            />
+            <p className="text-[12px] text-[#171713]/50">A imagem do compartilhamento (WhatsApp, Facebook) é a foto de capa.</p>
+          </SettingsCard>
 
           {id && (
             <button type="button" onClick={remove} disabled={busy !== null} className="text-[13px] text-[#9B2C1F] underline underline-offset-4">

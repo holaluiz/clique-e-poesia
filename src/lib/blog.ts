@@ -12,13 +12,42 @@ export interface BlogPost {
   content: string;
   status: PostStatus;
   published_at: string | null;
+  category_ids: string[];
+  tags: string[];
+  seo_title: string | null;
+  seo_description: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type BlogPostDraft = Pick<BlogPost, "slug" | "title" | "location" | "excerpt" | "cover_url" | "content" | "status" | "published_at">;
+export type BlogPostDraft = Pick<
+  BlogPost,
+  | "slug"
+  | "title"
+  | "location"
+  | "excerpt"
+  | "cover_url"
+  | "content"
+  | "status"
+  | "published_at"
+  | "category_ids"
+  | "tags"
+  | "seo_title"
+  | "seo_description"
+>;
 
-const LIST_COLUMNS = "id, slug, title, location, excerpt, cover_url, status, published_at, created_at, updated_at";
+export interface BlogCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+/** Limites recomendados para o Google não cortar o título e a descrição. */
+export const SEO_TITLE_LIMIT = 60;
+export const SEO_DESCRIPTION_LIMIT = 160;
+
+const LIST_COLUMNS =
+  "id, slug, title, location, excerpt, cover_url, status, published_at, category_ids, tags, created_at, updated_at";
 const IMAGE_BUCKET = "blog";
 const MAX_IMAGE_SIDE = 2000;
 
@@ -69,6 +98,27 @@ export async function savePost(id: string | null, post: BlogPostDraft) {
 
 export async function deletePost(id: string) {
   const { error } = await client().from("posts").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function listCategories() {
+  const { data, error } = await client().from("blog_categories").select("id, name, slug").order("name");
+  if (error) throw error;
+  return data as BlogCategory[];
+}
+
+export async function saveCategory(id: string | null, name: string) {
+  const category = { name: name.trim(), slug: slugify(name) };
+  const query = id
+    ? client().from("blog_categories").update(category).eq("id", id)
+    : client().from("blog_categories").insert(category);
+  const { data, error } = await query.select("id, name, slug").single();
+  if (error) throw error;
+  return data as BlogCategory;
+}
+
+export async function deleteCategory(id: string) {
+  const { error } = await client().from("blog_categories").delete().eq("id", id);
   if (error) throw error;
 }
 

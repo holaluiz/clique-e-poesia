@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { formatPostDate, getPostBySlug, listPublishedPosts, type BlogPost } from "../../lib/blog";
+import { formatPostDate, getPostBySlug, listCategories, listPublishedPosts, type BlogCategory, type BlogPost } from "../../lib/blog";
 import { handleLinkClick } from "../../lib/router";
+import { resetPageMeta, setPageMeta } from "../../lib/seo";
 import { supabase } from "../../lib/supabase";
 import { PostCard } from "./PostCard";
 import { PostContent } from "./PostContent";
 import "./blog.css";
 
-const SITE_TITLE = "Clique e Poesia — Um Clique, uma poesia!";
+const BLOG_DESCRIPTION =
+  "Textos autorais e reais sobre a nossa experiência em hospedagens, chalés, pousadas e lugares que a gente fotografa e indica.";
+
+/** Categorias do blog, carregadas uma vez por página. */
+function useCategories() {
+  const [categories, setCategories] = useState<BlogCategory[]>([]);
+  useEffect(() => {
+    if (!supabase) return;
+    listCategories()
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
+  return categories;
+}
 
 export const BlogShell: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="min-h-screen bg-[#F3EBDD] text-[#171713]">
@@ -39,6 +53,7 @@ type PostState = { status: "loading" } | { status: "ready"; post: BlogPost } | {
 
 export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
   const [state, setState] = useState<PostState>({ status: "loading" });
+  const categories = useCategories();
 
   useEffect(() => {
     if (!supabase) {
@@ -56,11 +71,19 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
   }, [slug]);
 
   useEffect(() => {
-    if (state.status === "ready") document.title = `${state.post.title} — Clique e Poesia`;
-    return () => {
-      document.title = SITE_TITLE;
-    };
+    if (state.status !== "ready") return;
+    const { post } = state;
+    setPageMeta({
+      title: post.seo_title?.trim() || `${post.title} — Clique e Poesia`,
+      description: post.seo_description?.trim() || post.excerpt?.trim() || undefined,
+      image: post.cover_url,
+      path: `/blog/${post.slug}`,
+      type: "article",
+      noindex: post.status === "draft",
+    });
   }, [state]);
+
+  useEffect(() => resetPageMeta, []);
 
   if (state.status === "loading") {
     return (
@@ -89,6 +112,7 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
   }
 
   const { post } = state;
+  const postCategories = categories.filter((category) => post.category_ids?.includes(category.id));
   return (
     <BlogShell>
       <article className="pb-28 sm:pb-36">
@@ -97,6 +121,20 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
             <span className="inline-block px-3 py-1 rounded-full bg-[#171713] text-[12px] font-medium text-[#FAF7F2]">
               Rascunho — só o administrador vê esta página
             </span>
+          )}
+          {postCategories.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {postCategories.map((category) => (
+                <a
+                  key={category.id}
+                  href={`/blog?categoria=${category.slug}`}
+                  onClick={handleLinkClick}
+                  className="px-3 py-1 rounded-full border border-[#384936]/30 text-[12px] font-medium text-[#384936] hover:bg-[#384936] hover:text-[#FAF7F2] transition-colors"
+                >
+                  {category.name}
+                </a>
+              ))}
+            </div>
           )}
           <div className="text-[11px] sm:text-[12px] font-medium tracking-[0.2em] uppercase text-[#7B7955]">
             {[post.location, formatPostDate(post.published_at)].filter(Boolean).join(" · ")}
@@ -123,6 +161,16 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
 
         <PostContent content={post.content} className="max-w-[680px] mx-auto px-6" />
 
+        {post.tags?.length > 0 && (
+          <ul className="max-w-[680px] mx-auto px-6 pt-12 flex flex-wrap gap-2" aria-label="Tags">
+            {post.tags.map((tag) => (
+              <li key={tag} className="px-3 py-1 rounded-full bg-[#171713]/6 text-[13px] text-[#171713]/70">
+                #{tag}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <footer className="max-w-[680px] mx-auto px-6 pt-16 mt-16 border-t border-[#171713]/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="font-handwriting text-[28px] text-[#384936]">Um clique, uma poesia.</span>
           <a href="/blog" onClick={handleLinkClick} className="text-[14px] font-medium text-[#384936] hover:underline underline-offset-4">
@@ -138,13 +186,24 @@ type ListState = { status: "loading" } | { status: "ready"; posts: Omit<BlogPost
 
 export const BlogIndexPage: React.FC = () => {
   const [state, setState] = useState<ListState>(supabase ? { status: "loading" } : { status: "ready", posts: [] });
+  const categories = useCategories();
+  const [filter, setFilter] = useState(() => new URLSearchParams(window.location.search).get("categoria") ?? "");
 
   useEffect(() => {
-    document.title = "Blog — Clique e Poesia";
-    return () => {
-      document.title = SITE_TITLE;
-    };
+    setPageMeta({ title: "Blog — Clique e Poesia", description: BLOG_DESCRIPTION, path: "/blog" });
+    return resetPageMeta;
   }, []);
+
+  const chooseFilter = (slug: string) => {
+    setFilter(slug);
+    window.history.replaceState(null, "", slug ? `/blog?categoria=${slug}` : "/blog");
+  };
+
+  const posts = state.status === "ready" ? state.posts : [];
+  // Só mostra no filtro as categorias que já têm texto publicado.
+  const usedCategories = categories.filter((category) => posts.some((post) => post.category_ids?.includes(category.id)));
+  const activeCategory = categories.find((category) => category.slug === filter);
+  const visiblePosts = activeCategory ? posts.filter((post) => post.category_ids?.includes(activeCategory.id)) : posts;
 
   useEffect(() => {
     if (!supabase) return;
@@ -166,14 +225,38 @@ export const BlogIndexPage: React.FC = () => {
           <p className="font-handwriting text-[clamp(1.8rem,3vw,2.5rem)] text-[#384936]">Viver, contar e dar vontade de viver também.</p>
         </header>
 
+        {usedCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoria">
+            {[{ id: "", name: "Todos", slug: "" }, ...usedCategories].map((category) => {
+              const active = (activeCategory?.slug ?? "") === category.slug;
+              return (
+                <button
+                  key={category.id || "todos"}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => chooseFilter(category.slug)}
+                  className={`px-4 py-2 rounded-full border text-[14px] font-medium transition-colors ${
+                    active ? "border-[#384936] bg-[#384936] text-[#FAF7F2]" : "border-[#171713]/15 text-[#171713]/75 hover:bg-[#171713]/5"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {state.status === "loading" && <p className="text-[#7B7955]">Carregando textos…</p>}
         {state.status === "error" && <p className="text-[#7B7955]">Não conseguimos carregar os textos agora. Tente de novo em instantes.</p>}
         {state.status === "ready" && state.posts.length === 0 && (
           <p className="font-handwriting text-[2.2rem] text-[#384936]">Os primeiros textos estão chegando.</p>
         )}
-        {state.status === "ready" && state.posts.length > 0 && (
+        {state.status === "ready" && state.posts.length > 0 && visiblePosts.length === 0 && (
+          <p className="text-[#7B7955]">Nenhum texto nessa categoria ainda.</p>
+        )}
+        {visiblePosts.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-16">
-            {state.posts.map((post) => (
+            {visiblePosts.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
