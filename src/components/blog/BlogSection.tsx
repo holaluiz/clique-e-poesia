@@ -41,18 +41,20 @@ export const BlogSection: React.FC = () => {
             >
               Nosso Blog
             </h2>
+            <div className="space-y-4 pt-5 [&_strong]:font-semibold [&_strong]:text-[#171713]">
+              <p className="text-[17px] sm:text-[19px] leading-[1.6] text-[#171713]/90 max-w-2xl">
+                Além de nos hospedarmos para fotografar e filmar sua hospedagem, a gente também cria{" "}
+                <strong>textos (Blogs) reais sobre a nossa experiência por lá</strong>, para contar e indicar o lugar para
+                outras pessoas.
+              </p>
+              <p className="text-[16px] sm:text-[17.5px] leading-[1.6] text-[#7B7955] max-w-2xl">
+                O texto é <strong>autoral, criativo e bem dinâmico</strong>.
+              </p>
+            </div>
           </div>
 
-          <div className="lg:col-span-7 space-y-4 lg:pt-8 [&_strong]:font-semibold [&_strong]:text-[#171713]">
-            <p className="text-[17px] sm:text-[19px] leading-[1.6] text-[#171713]/90 max-w-2xl">
-              Além de nos hospedarmos para fotografar e filmar sua hospedagem, a gente também cria{" "}
-              <strong>textos (Blogs) reais sobre a nossa experiência por lá</strong>, para contar e indicar o lugar para
-              outras pessoas.
-            </p>
-            <p className="text-[16px] sm:text-[17.5px] leading-[1.6] text-[#7B7955] max-w-2xl">
-              O texto é <strong>autoral, criativo e bem dinâmico</strong>.
-            </p>
-            <p className="font-handwriting text-[clamp(1.75rem,2.6vw,2.4rem)] leading-snug text-[#384936] max-w-2xl pt-2">
+          <div className="lg:col-span-7 lg:self-end">
+            <p className="font-handwriting text-[clamp(1.75rem,2.6vw,2.4rem)] leading-snug text-[#384936] max-w-2xl">
               A gente quer viver a experiência, contar como foi e fazer outras pessoas terem vontade de viver também.
             </p>
           </div>
