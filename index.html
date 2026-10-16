@@ -18,8 +18,14 @@
     <meta name="theme-color" content="#3F503E" />
 
     <!-- Brand typography: Omnes and Canvas Script, served by Adobe Fonts. -->
+    <!-- Carregado sem bloquear a primeira pintura: o texto aparece na fonte reserva e troca quando a fonte chega. -->
     <link rel="preconnect" href="https://use.typekit.net" crossorigin />
-    <link rel="stylesheet" href="https://use.typekit.net/zxu4fzi.css" />
+    <link rel="preconnect" href="https://p.typekit.net" crossorigin />
+    <link rel="preload" as="style" href="https://use.typekit.net/zxu4fzi.css" />
+    <link rel="stylesheet" href="https://use.typekit.net/zxu4fzi.css" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://use.typekit.net/zxu4fzi.css" /></noscript>
+
+    <link rel="preload" as="image" href="/hero-bg-1920.webp" imagesrcset="/hero-bg-1280.webp 1280w, /hero-bg-1920.webp 1920w" imagesizes="(max-aspect-ratio: 16/9) 178vh, 100vw" fetchpriority="high" />
 
     <!-- CARAMELO SEED v1 -->
     <meta name="generator" content="Um Cara Caramelo" />

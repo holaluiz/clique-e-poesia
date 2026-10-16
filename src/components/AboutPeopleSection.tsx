@@ -31,10 +31,10 @@ export const AboutPeopleSection: React.FC = () => {
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
             <div className="relative aspect-[4/5] w-full rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
-                src="/portraits/marcos.webp"
+                src="/portraits/marcos-800.webp"
                 alt="Marcos — Fotógrafo e Designer"
-                width={1080}
-                height={1080}
+                width={800}
+                height={800}
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-cover object-[50%_25%] grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
@@ -70,10 +70,10 @@ export const AboutPeopleSection: React.FC = () => {
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
             <div className="relative aspect-[4/5] w-full rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
-                src="/portraits/nadine.webp"
+                src="/portraits/nadine-800.webp"
                 alt="Nadine — Fotógrafa e Redatora"
-                width={1080}
-                height={1080}
+                width={800}
+                height={800}
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-cover object-[50%_25%] grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"

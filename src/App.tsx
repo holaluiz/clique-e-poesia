@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { StickyNavbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
 import { AboutPeopleSection } from "./components/AboutPeopleSection";
@@ -7,11 +7,14 @@ import { PessoasSection } from "./components/PessoasSection";
 import { GastronomiaSection } from "./components/GastronomiaSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { BlogSection } from "./components/blog/BlogSection";
-import { BlogIndexPage, BlogPostPage } from "./components/blog/BlogPages";
-import { AdminPage } from "./components/admin/AdminPage";
 import { ClosingSection } from "./components/ClosingSection";
 import { usePathname } from "./lib/router";
 import { useSmoothScroll } from "./lib/useSmoothScroll";
+
+// Páginas fora da home ficam em arquivos separados: o visitante da home não baixa o painel nem o leitor do blog.
+const AdminPage = lazy(() => import("./components/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
+const BlogIndexPage = lazy(() => import("./components/blog/BlogPages").then((m) => ({ default: m.BlogIndexPage })));
+const BlogPostPage = lazy(() => import("./components/blog/BlogPages").then((m) => ({ default: m.BlogPostPage })));
 
 function HomePage() {
   return (
@@ -52,8 +55,10 @@ export default function App() {
   const path = usePathname();
   useSmoothScroll();
 
-  if (path === "/admin" || path.startsWith("/admin/")) return <AdminPage path={path} />;
-  if (path === "/blog") return <BlogIndexPage />;
-  if (path.startsWith("/blog/")) return <BlogPostPage slug={decodeURIComponent(path.slice("/blog/".length))} />;
-  return <HomePage />;
+  let page: React.ReactNode = <HomePage />;
+  if (path === "/admin" || path.startsWith("/admin/")) page = <AdminPage path={path} />;
+  else if (path === "/blog") page = <BlogIndexPage />;
+  else if (path.startsWith("/blog/")) page = <BlogPostPage slug={decodeURIComponent(path.slice("/blog/".length))} />;
+
+  return <Suspense fallback={<div className="min-h-screen bg-[#F3EBDD]" />}>{page}</Suspense>;
 }

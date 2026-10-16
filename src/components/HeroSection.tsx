@@ -10,7 +10,13 @@ export const HeroSection: React.FC = () => {
     <HeroScrollSequence>
       <div ref={containerRef} className="hero-section">
         <div className="hero-photograph" aria-hidden="true">
-          <img src="/BG_01.png" alt="" fetchPriority="high" />
+          <img
+            src="/hero-bg-1920.webp"
+            srcSet="/hero-bg-1280.webp 1280w, /hero-bg-1920.webp 1920w"
+            sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
+            alt=""
+            fetchPriority="high"
+          />
         </div>
         <div className="hero-shade" aria-hidden="true" />
         <HandwrittenTrail containerRef={containerRef} />
