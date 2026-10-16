@@ -9,7 +9,7 @@ export const AboutPeopleSection: React.FC = () => {
       {/* Subtle editorial paper grain texture */}
       <div className="absolute inset-0 editorial-paper-texture pointer-events-none opacity-20" />
 
-      <div className="relative z-10 w-full max-w-[1200px] mx-auto">
+      <div className="relative z-10 w-full max-w-[960px] mx-auto">
         {/* ========================================================================= */}
         {/* PARTE 1 — CABEÇALHO EDITORIAL                                             */}
         {/* ========================================================================= */}
@@ -22,14 +22,14 @@ export const AboutPeopleSection: React.FC = () => {
         {/* ========================================================================= */}
         {/* PARTE 2 & 3 — DUAS PEÇAS FOTOGRÁFICAS VIVAS COM RITMO EDITORIAL          */}
         {/* ========================================================================= */}
-        <div className="mt-8 sm:mt-12 md:mt-[clamp(1.5rem,4svh,3rem)] grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 lg:gap-20 items-start">
+        <div className="mt-8 sm:mt-12 md:mt-[clamp(1.5rem,4svh,3rem)] grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 md:gap-10 lg:gap-14 items-start">
           
           {/* --------------------------------------------------------------------- */}
           {/* COLUNA ESQUERDA — MARCOS                                              */}
           {/* --------------------------------------------------------------------- */}
           <div className="flex flex-col space-y-6 md:space-y-4 group">
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
-            <div className="relative aspect-[4/5] w-full md:w-[clamp(256px,calc((100svh-23rem)*0.8),100%)] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
+            <div className="relative aspect-[4/5] w-full rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
                 src="/portraits/marcos.webp"
                 alt="Marcos — Fotógrafo e Designer"
@@ -68,7 +68,7 @@ export const AboutPeopleSection: React.FC = () => {
           {/* --------------------------------------------------------------------- */}
           <div className="flex flex-col space-y-6 md:space-y-4 md:pt-[clamp(1.5rem,6svh,4rem)] group">
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
-            <div className="relative aspect-[4/5] w-full md:w-[clamp(256px,calc((100svh-23rem)*0.8),100%)] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
+            <div className="relative aspect-[4/5] w-full rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
                 src="/portraits/nadine.webp"
                 alt="Nadine — Fotógrafa e Redatora"
