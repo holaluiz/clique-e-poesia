@@ -88,11 +88,20 @@
   white-space: nowrap;
 }
 
-.hero-scroll-signature-brand em {
-  display: inline;
-  padding: 0;
-  color: #9b9b5f;
-  text-transform: lowercase;
+/* Assinatura: isotipo dourado + "Clique e Poesia", como no rodapé. */
+.hero-scroll-line > .hero-scroll-signature-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  font-size: 0.66em;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.hero-scroll-signature-brand img {
+  display: block;
+  width: auto;
+  height: 1.12em;
 }
 
 .hero-scroll-signature .hero-scroll-signature-sub {
@@ -179,6 +188,10 @@
   .hero-scroll-signature {
     max-width: 100%;
     font-size: clamp(1.75rem, 8.7vw, 4rem);
+  }
+
+  .hero-scroll-line > .hero-scroll-signature-brand {
+    font-size: 1.05em;
   }
 
   .hero-scroll-signature .hero-scroll-signature-sub {

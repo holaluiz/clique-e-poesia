@@ -61,7 +61,8 @@ function Signature({ subtitleOpacity }: { subtitleOpacity?: MotionValue<number> 
   return (
     <>
       <span className="hero-scroll-signature-brand">
-        Clique <em>e</em> Poesia.
+        <img src="/isotipo-clique-poesia.png" alt="" width={342} height={384} draggable={false} />
+        Clique e Poesia
       </span>
       <motion.span className="hero-scroll-signature-sub" style={{ opacity: subtitleOpacity }}>
         cada clique guarda uma história
