@@ -26,12 +26,13 @@ function toSafeHtml(content: string) {
     if (align && ["left", "center", "right", "justify"].includes(align)) (element as HTMLElement).style.textAlign = align;
   });
 
+  // Link externo (escolhido no editor) abre em nova aba; interno abre na mesma.
   clean.querySelectorAll("a[href]").forEach((link) => {
-    if (/^https?:\/\//i.test(link.getAttribute("href") ?? "")) {
-      link.setAttribute("target", "_blank");
+    if (link.getAttribute("target") === "_blank") {
       link.setAttribute("rel", "noopener noreferrer");
     } else {
       link.removeAttribute("target");
+      link.removeAttribute("rel");
     }
   });
 

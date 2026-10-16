@@ -126,3 +126,9 @@
 .blog-prose.tiptap hr.ProseMirror-selectednode {
   border-top-color: #384936;
 }
+
+/* No editor, links externos ganham uma setinha para diferenciar dos internos. */
+.blog-prose.tiptap a[target="_blank"]::after {
+  content: " ↗";
+  font-size: 0.8em;
+}

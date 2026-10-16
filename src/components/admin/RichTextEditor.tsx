@@ -4,6 +4,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import { Placeholder } from "@tiptap/extensions";
+import { LinkDialog, type LinkValue } from "./LinkDialog";
 import {
   AlignCenter,
   AlignJustify,
@@ -68,8 +69,30 @@ function imageFiles(list: FileList | null | undefined) {
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onUploadImage, onError }) => {
   const [uploading, setUploading] = useState(false);
+  const [linkDialog, setLinkDialog] = useState<{
+    href: string;
+    newTab: boolean | null;
+    needsText: boolean;
+    editing: boolean;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<Editor | null>(null);
+
+  const openLinkDialog = () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const editing = editor.isActive("link");
+    const attrs = editor.getAttributes("link");
+    setLinkDialog({
+      href: (attrs.href as string | undefined) ?? "",
+      newTab: editing ? attrs.target === "_blank" : null,
+      needsText: !editing && editor.state.selection.empty,
+      editing,
+    });
+  };
+  // Ctrl+K abre a janela de link; o atalho é registrado uma vez, então lê sempre a versão atual.
+  const openLinkDialogRef = useRef(openLinkDialog);
+  openLinkDialogRef.current = openLinkDialog;
 
   const insertImages = async (files: File[], position?: number) => {
     const editor = editorRef.current;
@@ -110,6 +133,14 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
       attributes: {
         class: "blog-prose min-h-[520px] px-5 sm:px-8 py-7 focus:outline-none",
         "aria-label": "Texto",
+      },
+      handleKeyDown: (_view, event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+          event.preventDefault();
+          openLinkDialogRef.current();
+          return true;
+        }
+        return false;
       },
       // Fotos coladas ou arrastadas para o texto também são enviadas.
       handlePaste: (_view, event) => {
@@ -167,20 +198,22 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
 
   const chain = () => editor.chain().focus();
 
-  const setLink = () => {
-    const previous = (editor.getAttributes("link").href as string | undefined) ?? "";
-    const url = window.prompt("Endereço do link (deixe vazio para remover):", previous || "https://");
-    if (url === null) return;
-    const trimmed = url.trim();
-    if (!trimmed || trimmed === "https://") {
-      chain().extendMarkRange("link").unsetLink().run();
-      return;
+  const applyLink = ({ href, newTab, text }: LinkValue) => {
+    const target = newTab ? "_blank" : null;
+    if (text) {
+      chain()
+        .insertContent({ type: "text", text, marks: [{ type: "link", attrs: { href, target } }] })
+        .unsetMark("link")
+        .run();
+    } else {
+      chain().extendMarkRange("link").setLink({ href, target }).run();
     }
-    const external = /^https?:\/\//i.test(trimmed);
-    chain()
-      .extendMarkRange("link")
-      .setLink({ href: trimmed, target: external ? "_blank" : null })
-      .run();
+    setLinkDialog(null);
+  };
+
+  const removeLink = () => {
+    chain().extendMarkRange("link").unsetLink().run();
+    setLinkDialog(null);
   };
 
   const setCaption = () => {
@@ -219,7 +252,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         <ToolButton label="Alinhar à direita" icon={AlignRight} onClick={() => chain().setTextAlign("right").run()} active={state.alignRight} />
         <ToolButton label="Justificar" icon={AlignJustify} onClick={() => chain().setTextAlign("justify").run()} active={state.alignJustify} />
         <Divider />
-        <ToolButton label="Inserir ou editar link" icon={Link2} onClick={setLink} active={state.link} />
+        <ToolButton label="Inserir ou editar link (Ctrl+K)" icon={Link2} onClick={openLinkDialog} active={state.link} />
         <ToolButton label="Remover link" icon={Unlink} onClick={() => chain().extendMarkRange("link").unsetLink().run()} disabled={!state.link} />
         <ToolButton label={uploading ? "Enviando foto…" : "Inserir foto"} icon={ImagePlus} onClick={() => fileInputRef.current?.click()} disabled={uploading} />
         <ToolButton label="Legenda da foto selecionada" icon={Captions} onClick={setCaption} disabled={!state.image} />
@@ -239,6 +272,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
         />
       </div>
       <EditorContent editor={editor} />
+      {linkDialog && (
+        <LinkDialog
+          initialHref={linkDialog.href}
+          initialNewTab={linkDialog.newTab}
+          needsText={linkDialog.needsText}
+          editing={linkDialog.editing}
+          onApply={applyLink}
+          onRemove={removeLink}
+          onCancel={() => {
+            setLinkDialog(null);
+            editor.commands.focus();
+          }}
+        />
+      )}
     </div>
   );
 };
