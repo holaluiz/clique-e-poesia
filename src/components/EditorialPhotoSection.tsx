@@ -28,6 +28,8 @@ interface EditorialPhotoSectionProps {
   category: PortfolioCategory;
   /** Foto de fundo nítida, escurecida pela cor da seção (como a hero). */
   backdrop?: string;
+  /** Ilustração decorativa atrás do conteúdo (posicionada por quem a passa). */
+  decoration?: React.ReactNode;
 }
 
 // Paletas: escura (sobre #171713) e clara (papel creme), mantendo o mesmo ritmo editorial.
@@ -66,6 +68,7 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
   photos,
   category,
   backdrop,
+  decoration,
 }) => {
   const reducedMotion = useReducedMotion();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -114,6 +117,11 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
             className="w-full h-full object-cover opacity-40"
           />
           <div className={`absolute inset-0 ${colors.backdropFade}`} />
+        </div>
+      )}
+      {decoration && (
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+          {decoration}
         </div>
       )}
       <div className="relative z-10 w-full max-w-[1400px] mx-auto space-y-12 sm:space-y-16">
