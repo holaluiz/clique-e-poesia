@@ -12,13 +12,6 @@
   color: #fffdf5;
 }
 
-.site-header-brand {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 6px;
-}
-
 .site-header-logo {
   display: inline-flex;
   flex: 0 0 auto;
@@ -39,41 +32,6 @@
   max-width: 200px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgb(0 0 0 / 16%));
-}
-
-.site-logo-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  color: rgb(255 253 245 / 65%);
-  opacity: 0;
-  cursor: pointer;
-  transition: opacity 180ms ease, background-color 180ms ease, color 180ms ease;
-}
-
-.site-logo-edit svg {
-  width: 16px;
-  height: 16px;
-}
-
-.site-header-brand:hover .site-logo-edit,
-.site-header-brand:focus-within .site-logo-edit {
-  opacity: 1;
-}
-
-.site-logo-edit:hover {
-  background: rgb(255 253 245 / 10%);
-  color: #e4cda1;
-}
-
-.site-logo-input {
-  display: none;
 }
 
 .site-header-navigation {
@@ -182,17 +140,6 @@
 
   .site-header-logo {
     min-height: 44px;
-  }
-
-  .site-header-brand {
-    gap: 4px;
-  }
-
-  .site-logo-edit {
-    width: 30px;
-    height: 44px;
-    border-radius: 8px;
-    opacity: 0.7;
   }
 
   .site-nav-desktop {

@@ -8,39 +8,7 @@ const navLinks = [
   { name: "Blog", href: "#blog" },
 ];
 
-const LOGO_EVENT = "clique_logo_updated";
-const LOGO_KEY = "clique_official_logo_svg";
-const DEFAULT_LOGO = "/LOGO BRANCA HORIZONTAL.svg";
-
-function getSavedLogo() {
-  try {
-    return localStorage.getItem(LOGO_KEY) || DEFAULT_LOGO;
-  } catch {
-    return DEFAULT_LOGO;
-  }
-}
-
-function useSyncedLogo() {
-  const [logoSrc, setLogoSrc] = useState(getSavedLogo);
-
-  useEffect(() => {
-    const handleLogoUpdate = (event: Event) => {
-      const updatedLogo = (event as CustomEvent<string>).detail;
-      setLogoSrc(typeof updatedLogo === "string" ? updatedLogo : getSavedLogo());
-    };
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === LOGO_KEY) setLogoSrc(getSavedLogo());
-    };
-    window.addEventListener(LOGO_EVENT, handleLogoUpdate);
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener(LOGO_EVENT, handleLogoUpdate);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  return logoSrc;
-}
+const LOGO_SRC = "/LOGO BRANCA HORIZONTAL.svg";
 
 function useMobileMenu<T extends HTMLElement>() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -170,75 +138,13 @@ function Navigation({
 }
 
 export function Navbar() {
-  const logoSrc = useSyncedLogo();
-  const logoInputRef = useRef<HTMLInputElement>(null);
   const { mobileMenuOpen, setMobileMenuOpen, containerRef, menuButtonRef } = useMobileMenu<HTMLElement>();
-
-  const handleLogoFile = (file: File) => {
-    const isSvg = /\.svg$/i.test(file.name) || file.type === "image/svg+xml";
-    if (!isSvg && !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      const content = reader.result;
-      const dataUrl = isSvg ? `data:image/svg+xml;utf8,${encodeURIComponent(content)}` : content;
-      try {
-        localStorage.setItem(LOGO_KEY, dataUrl);
-      } catch (error) {
-        console.warn("Could not save the logo in browser storage:", error);
-      }
-      window.dispatchEvent(new CustomEvent(LOGO_EVENT, { detail: dataUrl }));
-      fetch("/api/upload-logo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isSvg ? { content } : { dataUrl }),
-      }).catch(console.error);
-    };
-    if (isSvg) reader.readAsText(file);
-    else reader.readAsDataURL(file);
-  };
 
   return (
     <header ref={containerRef} className="site-header site-header-hero">
-      <div
-        className="site-header-brand"
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const file = event.dataTransfer.files?.[0];
-          if (file) handleLogoFile(file);
-        }}
-      >
-        <a href="#inicio" className="site-header-logo" aria-label="Clique e Poesia — início">
-          <img src={logoSrc} alt="Clique & Poesia" />
-        </a>
-        <button
-          type="button"
-          className="site-logo-edit"
-          onClick={() => logoInputRef.current?.click()}
-          aria-label="Alterar logo da Clique e Poesia"
-          title="Alterar logo ou arrastar um arquivo sobre ela"
-        >
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="m12.5 4.5 3 3M4 16l3.5-.7L16 6.8a2.1 2.1 0 0 0-3-3l-8.3 8.7L4 16Z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <input
-          ref={logoInputRef}
-          type="file"
-          accept=".svg,image/svg+xml,image/*"
-          className="site-logo-input"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) handleLogoFile(file);
-            event.target.value = "";
-          }}
-        />
-      </div>
+      <a href="#inicio" className="site-header-logo" aria-label="Clique e Poesia — início">
+        <img src={LOGO_SRC} alt="Clique & Poesia" />
+      </a>
       <Navigation
         variant="hero"
         mobileMenuOpen={mobileMenuOpen}
@@ -252,7 +158,6 @@ export function Navbar() {
 
 export function StickyNavbar() {
   const [isPastHero, setIsPastHero] = useState(false);
-  const logoSrc = useSyncedLogo();
   const { mobileMenuOpen, setMobileMenuOpen, containerRef, menuButtonRef } = useMobileMenu<HTMLDivElement>();
   const activeHref = useActiveSection(isPastHero);
 
@@ -284,7 +189,7 @@ export function StickyNavbar() {
     >
       <div className="site-header site-header-sticky-inner">
         <a href="#inicio" className="site-header-logo" aria-label="Clique e Poesia — voltar ao início">
-          <img src={logoSrc} alt="Clique & Poesia" />
+          <img src={LOGO_SRC} alt="Clique & Poesia" />
         </a>
         <Navigation
           variant="sticky"
