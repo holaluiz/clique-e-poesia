@@ -10,9 +10,11 @@ export const ClosingSection: React.FC = () => {
       {/* Background Cinematic Texture & Vignette */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <img
-          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=85"
-          alt="Paisagem serena ao entardecer"
-          className="w-full h-full object-cover opacity-30 filter saturate-75"
+          src="https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/aldea-zen/img_2649.webp"
+          alt="Chalé de tijolos entre bambus e palmeiras na Aldea Zen"
+          loading="lazy"
+          decoding="async"
+          className="w-full h-full object-cover object-[50%_45%] opacity-30 filter saturate-75"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#171713] via-[#171713]/75 to-[#171713]" />
       </div>
