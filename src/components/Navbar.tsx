@@ -5,6 +5,8 @@ const navLinks = [
   { name: "Quem Somos", href: "#quem-somos" },
   { name: "A Clique", href: "#a-clique" },
   { name: "Pessoas", href: "#pessoas" },
+  // Seção do blog ainda será criada; o link já fica no menu.
+  { name: "Blog", href: "#blog" },
   { name: "E no fim...", href: "#fechamento" },
 ];
 
