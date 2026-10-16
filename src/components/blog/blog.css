@@ -83,3 +83,46 @@
   line-height: 1.5;
   text-align: center;
 }
+
+.blog-prose ol {
+  padding-left: 1.4em;
+  list-style: decimal;
+}
+
+.blog-prose li > p + p,
+.blog-prose blockquote > p + p {
+  margin-top: 0.6em;
+}
+
+.blog-prose hr {
+  margin-block: 2.6em;
+  border: 0;
+  border-top: 1px solid rgb(23 23 19 / 15%);
+}
+
+.blog-prose u {
+  text-underline-offset: 3px;
+}
+
+/* Editor visual do painel (TipTap): mesmo visual do site, com alguns ajustes de edição. */
+.blog-prose.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: rgb(23 23 19 / 35%);
+  pointer-events: none;
+}
+
+.blog-prose.tiptap img {
+  cursor: pointer;
+}
+
+.blog-prose.tiptap img.ProseMirror-selectednode {
+  outline: 3px solid #384936;
+  outline-offset: 3px;
+}
+
+
+.blog-prose.tiptap hr.ProseMirror-selectednode {
+  border-top-color: #384936;
+}
