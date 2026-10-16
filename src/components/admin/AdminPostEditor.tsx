@@ -1,6 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import { deletePost, getPostById, savePost, slugify, uploadImage, type BlogPost, type BlogPostDraft } from "../../lib/blog";
+import type { Area } from "react-easy-crop";
+import {
+  COVER_SIZE,
+  deletePost,
+  getPostById,
+  savePost,
+  slugify,
+  uploadCover,
+  uploadImage,
+  type BlogPost,
+  type BlogPostDraft,
+} from "../../lib/blog";
 import { handleLinkClick, navigate } from "../../lib/router";
+import { CoverCropDialog } from "./CoverCropDialog";
 import { RichTextEditor } from "./RichTextEditor";
 import { Field, PrimaryButton, SecondaryButton, inputClass } from "./ui";
 
@@ -38,6 +50,7 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   const dirty = JSON.stringify(form) !== JSON.stringify(saved);
 
@@ -126,14 +139,20 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
     handleLinkClick(event);
   };
 
-  const handleCover = async (file: File | undefined) => {
+  const chooseCover = (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) return setNotice({ tone: "error", text: "Escolha um arquivo de imagem." });
+    setCoverFile(file);
+  };
+
+  const saveCover = async (area: Area) => {
+    if (!coverFile) return;
     setBusy("cover");
     try {
-      update("cover_url", await uploadImage(file));
+      update("cover_url", await uploadCover(coverFile, area));
+      setCoverFile(null);
     } catch {
-      setNotice({ tone: "error", text: "Não foi possível enviar a imagem. Tente de novo." });
+      setNotice({ tone: "error", text: "Não foi possível enviar a capa. Tente de novo." });
     } finally {
       setBusy(null);
     }
@@ -186,8 +205,10 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
         <aside className="lg:col-span-4 space-y-4 lg:sticky lg:top-16">
           <div className="rounded-[8px] bg-white border border-[#171713]/8 p-5 sm:p-6 space-y-5">
             <div className="space-y-2">
-              <span className="block text-[13px] font-medium text-[#171713]/80">Foto de capa</span>
-              <div className="relative aspect-[4/3] rounded-[12px] overflow-hidden bg-[#E4D9C5]">
+              <span className="block text-[13px] font-medium text-[#171713]/80">
+                Foto de capa <span className="font-normal text-[#171713]/45">· {COVER_SIZE.width}×{COVER_SIZE.height}</span>
+              </span>
+              <div className="relative aspect-[1000/663] rounded-[8px] overflow-hidden bg-[#E4D9C5]">
                 {form.cover_url ? (
                   <img src={form.cover_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -215,10 +236,18 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
                 accept="image/*"
                 hidden
                 onChange={(e) => {
-                  handleCover(e.target.files?.[0]);
+                  chooseCover(e.target.files?.[0]);
                   e.target.value = "";
                 }}
               />
+              {coverFile && (
+                <CoverCropDialog
+                  file={coverFile}
+                  busy={busy === "cover"}
+                  onCancel={() => setCoverFile(null)}
+                  onConfirm={saveCover}
+                />
+              )}
             </div>
 
             <Field label="Hospedagem / local" hint="Aparece acima do título. Ex.: Aldea Zen · Serra da Mantiqueira">

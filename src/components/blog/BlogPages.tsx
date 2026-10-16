@@ -68,7 +68,7 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
         <div className="max-w-[760px] mx-auto px-6 py-24 space-y-6 animate-pulse" aria-label="Carregando texto">
           <div className="h-4 w-40 rounded bg-[#E4D9C5]" />
           <div className="h-14 w-4/5 rounded bg-[#E4D9C5]" />
-          <div className="aspect-[16/9] rounded-[16px] bg-[#E4D9C5]" />
+          <div className="max-w-[1000px] mx-auto aspect-[1000/663] rounded-[16px] bg-[#E4D9C5]" />
         </div>
       </BlogShell>
     );
@@ -110,11 +110,13 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
         </header>
 
         {post.cover_url && (
-          <div className="max-w-[1200px] mx-auto px-4 sm:px-10 mb-14 sm:mb-20">
+          <div className="max-w-[1000px] mx-auto px-4 sm:px-6 mb-14 sm:mb-20">
             <img
               src={post.cover_url}
               alt=""
-              className="w-full max-h-[78vh] object-cover rounded-[18px] shadow-[0_24px_60px_rgba(23,23,19,0.18)]"
+              width={1000}
+              height={663}
+              className="w-full h-auto aspect-[1000/663] object-cover rounded-[18px] shadow-[0_24px_60px_rgba(23,23,19,0.18)]"
             />
           </div>
         )}

@@ -66,7 +66,7 @@ export const AdminPostList: React.FC = () => {
                   <tr key={post.id} className="hover:bg-[#171713]/[0.02]">
                     <td className="px-5 py-3">
                       <a href={`/admin/texto/${post.id}`} onClick={handleLinkClick} className="flex items-center gap-3 group">
-                        <span className="w-14 h-10 flex-none rounded-[6px] overflow-hidden bg-[#171713]/8">
+                        <span className="w-[60px] h-[40px] flex-none rounded-[6px] overflow-hidden bg-[#171713]/8">
                           {post.cover_url && <img src={post.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />}
                         </span>
                         <span className="font-medium text-[#171713] group-hover:text-[#384936] line-clamp-2">

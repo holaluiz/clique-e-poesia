@@ -8,7 +8,7 @@ export const PostCard: React.FC<{ post: Omit<BlogPost, "content"> }> = ({ post }
     onClick={handleLinkClick}
     className="group flex flex-col gap-5 rounded-[18px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#384936]"
   >
-    <div className="relative aspect-[4/3] rounded-[16px] overflow-hidden bg-[#E4D9C5] shadow-[0_16px_40px_rgba(23,23,19,0.12)]">
+    <div className="relative aspect-[1000/663] rounded-[16px] overflow-hidden bg-[#E4D9C5] shadow-[0_16px_40px_rgba(23,23,19,0.12)]">
       {post.cover_url ? (
         <img
           src={post.cover_url}

@@ -93,15 +93,38 @@ async function resizeImage(file: File): Promise<Blob> {
   );
 }
 
-export async function uploadImage(file: File) {
-  const blob = await resizeImage(file);
-  const extension = blob.type === "image/webp" ? "webp" : file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const baseName = slugify(file.name.replace(/\.[^.]+$/, "")) || "imagem";
+async function uploadBlob(blob: Blob, fileName: string, extension: string) {
+  const baseName = slugify(fileName.replace(/\.[^.]+$/, "")) || "imagem";
   const path = `${new Date().getFullYear()}/${crypto.randomUUID().slice(0, 8)}-${baseName}.${extension}`;
   const storage = client().storage.from(IMAGE_BUCKET);
   const { error } = await storage.upload(path, blob, { contentType: blob.type, cacheControl: "31536000" });
   if (error) throw error;
   return storage.getPublicUrl(path).data.publicUrl;
+}
+
+export async function uploadImage(file: File) {
+  const blob = await resizeImage(file);
+  const extension = blob.type === "image/webp" ? "webp" : file.name.split(".").pop()?.toLowerCase() || "jpg";
+  return uploadBlob(blob, file.name, extension);
+}
+
+/** Tamanho padrão das capas do blog. */
+export const COVER_SIZE = { width: 1000, height: 663 } as const;
+
+/** Recorta a área escolhida da foto e salva a capa exatamente em 1000×663. */
+export async function uploadCover(file: File, area: { x: number; y: number; width: number; height: number }) {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = COVER_SIZE.width;
+  canvas.height = COVER_SIZE.height;
+  const context = canvas.getContext("2d")!;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(bitmap, area.x, area.y, area.width, area.height, 0, 0, COVER_SIZE.width, COVER_SIZE.height);
+  bitmap.close();
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((result) => (result ? resolve(result) : reject(new Error("Não foi possível processar a capa."))), "image/webp", 0.9),
+  );
+  return uploadBlob(blob, `capa-${file.name}`, "webp");
 }
 
 export function slugify(text: string) {

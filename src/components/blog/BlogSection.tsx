@@ -62,7 +62,7 @@ export const BlogSection: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-12" aria-hidden="true">
             {Array.from({ length: PREVIEW_COUNT }, (_, index) => (
               <div key={index} className="space-y-5 animate-pulse">
-                <div className="aspect-[4/3] rounded-[16px] bg-[#E4D9C5]" />
+                <div className="aspect-[1000/663] rounded-[16px] bg-[#E4D9C5]" />
                 <div className="h-3 w-1/3 rounded bg-[#E4D9C5]" />
                 <div className="h-7 w-4/5 rounded bg-[#E4D9C5]" />
               </div>
