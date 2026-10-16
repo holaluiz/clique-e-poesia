@@ -6,7 +6,6 @@ const navLinks = [
   { name: "A Clique", href: "#a-clique" },
   { name: "Pessoas", href: "#pessoas" },
   { name: "Blog", href: "#blog" },
-  { name: "E no fim...", href: "#fechamento" },
 ];
 
 const LOGO_EVENT = "clique_logo_updated";
