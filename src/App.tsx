@@ -4,6 +4,7 @@ import { HeroSection } from "./components/HeroSection";
 import { AboutPeopleSection } from "./components/AboutPeopleSection";
 import { ECliqueSection } from "./components/ECliqueSection";
 import { PessoasSection } from "./components/PessoasSection";
+import { GastronomiaSection } from "./components/GastronomiaSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { ClosingSection } from "./components/ClosingSection";
 
@@ -25,6 +26,9 @@ export default function App() {
 
         {/* Mas e as pessoas? — retratos */}
         <PessoasSection />
+
+        {/* Calma, é foto. — gastronomia */}
+        <GastronomiaSection />
 
         {/* Galeria de fotografias reais do portfólio. */}
         <PortfolioGallerySection />

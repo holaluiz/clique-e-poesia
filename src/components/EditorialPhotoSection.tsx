@@ -23,7 +23,7 @@ interface EditorialPhotoSectionProps {
   eyebrow: string;
   title: string;
   script: string;
-  paragraphs: [React.ReactNode, React.ReactNode];
+  paragraphs: [React.ReactNode, React.ReactNode?];
   photos: EditorialPhoto[];
   category: PortfolioCategory;
 }
@@ -125,9 +125,11 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
               {paragraphs[0]}
             </p>
 
-            <p className={`font-sans text-[16px] sm:text-[17.5px] leading-[1.6] font-normal max-w-lg ${colors.muted} ${colors.strong}`}>
-              {paragraphs[1]}
-            </p>
+            {paragraphs[1] && (
+              <p className={`font-sans text-[16px] sm:text-[17.5px] leading-[1.6] font-normal max-w-lg ${colors.muted} ${colors.strong}`}>
+                {paragraphs[1]}
+              </p>
+            )}
           </div>
         </div>
 
