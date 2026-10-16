@@ -1,5 +1,6 @@
 import React from "react";
 import { HandwrittenUnderline } from "./HandwrittenAnnotations";
+import { SocialLinks } from "./SocialLinks";
 
 export const ClosingSection: React.FC = () => {
   return (
@@ -56,6 +57,8 @@ export const ClosingSection: React.FC = () => {
           <p className="text-[11px] sm:text-[12px] font-sans font-medium tracking-[0.2em] uppercase text-[#FAF7F2]/65">
             Fotografia · Histórias · Hospedagens
           </p>
+
+          <SocialLinks className="pt-5" />
         </div>
 
         {/* Minimalist Editorial Footer line */}
