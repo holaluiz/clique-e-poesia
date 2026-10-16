@@ -38,7 +38,14 @@ export const ClosingSection: React.FC = () => {
         {/* Brand signature & Colophon with delicate handcrafted touch */}
         <div className="pt-12 sm:pt-16 flex flex-col items-center justify-center space-y-3 max-w-sm mx-auto">
           <div className="flex items-center gap-2.5">
-            <span className="text-[#B8A58B] font-serif italic text-3xl sm:text-4xl">c&amp;p</span>
+            <img
+              src="/isotipo-clique-poesia.png"
+              alt=""
+              aria-hidden="true"
+              width={171}
+              height={192}
+              className="h-9 sm:h-10 w-auto"
+            />
             <span className="font-serif text-2xl sm:text-[28px] tracking-[0.03em] text-[#FAF7F2]">
               Clique e Poesia
             </span>
