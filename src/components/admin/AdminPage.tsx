@@ -315,7 +315,7 @@ const Dashboard: React.FC = () => (
       <div>
         <div className="font-serif text-[22px] leading-tight">Clique e Poesia</div>
         <div className="text-[10.5px] font-medium tracking-[0.18em] uppercase text-[#171713]/45">
-          Fotografia · Histórias · Hospitalidade
+          Fotografia · Histórias · Hospedagens
         </div>
       </div>
     </AdminCard>

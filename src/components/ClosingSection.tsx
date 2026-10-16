@@ -54,7 +54,7 @@ export const ClosingSection: React.FC = () => {
           </div>
 
           <p className="text-[11px] sm:text-[12px] font-sans font-medium tracking-[0.2em] uppercase text-[#FAF7F2]/65">
-            Fotografia · Histórias · Hospitalidade
+            Fotografia · Histórias · Hospedagens
           </p>
         </div>
 
