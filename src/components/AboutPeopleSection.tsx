@@ -41,10 +41,6 @@ export const AboutPeopleSection: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#171713]/70 via-transparent to-transparent pointer-events-none" />
 
-              {/* Única tag em glass discreto sobre a fotografia */}
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-[8px] bg-[#171713]/40 backdrop-blur-md border border-[#FAF7F2]/10 text-[#FAF7F2] text-[11px] font-sans font-medium tracking-[0.18em] uppercase">
-                Criação
-              </div>
 
               {/* Nome sobre a fotografia com leitura contrastada e tipografia editorial (28-36px) */}
               <div className="absolute bottom-5 left-5 right-5 text-[#FAF7F2]">
@@ -84,10 +80,6 @@ export const AboutPeopleSection: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#171713]/70 via-transparent to-transparent pointer-events-none" />
 
-              {/* Única tag em glass discreto sobre a fotografia */}
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-[8px] bg-[#171713]/40 backdrop-blur-md border border-[#FAF7F2]/10 text-[#FAF7F2] text-[11px] font-sans font-medium tracking-[0.18em] uppercase">
-                Palavras
-              </div>
 
               {/* Nome sobre a fotografia com leitura contrastada e tipografia editorial (28-36px) */}
               <div className="absolute bottom-5 left-5 right-5 text-[#FAF7F2]">
