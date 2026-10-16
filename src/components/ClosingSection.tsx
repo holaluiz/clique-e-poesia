@@ -60,9 +60,6 @@ export const ClosingSection: React.FC = () => {
         <div className="pt-12 text-[12px] font-sans text-[#FAF7F2]/45 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span>&copy; {new Date().getFullYear()} Clique e Poesia. Todos os direitos reservados.</span>
           <span className="font-serif italic text-[13px] text-[#FAF7F2]/60">Fotografar e escrever com afeto.</span>
-          <a href="/admin" className="text-[#FAF7F2]/45 hover:text-[#FAF7F2]/80 transition-colors">
-            Administrador
-          </a>
         </div>
       </div>
     </section>
