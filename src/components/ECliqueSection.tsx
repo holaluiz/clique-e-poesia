@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { portfolioPhotos, type PortfolioProject } from "../data/portfolio";
+import { PortfolioPhotoViewer } from "./PortfolioPhotoViewer";
 
 const CDN = "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio";
 
@@ -43,8 +45,32 @@ const PHOTOS = [
   },
 ];
 
+// Projeto sintético para o visualizador: reaproveita miniaturas e dimensões do portfólio.
+const VIEWER_PROJECT: PortfolioProject = {
+  id: "e-a-clique",
+  title: "E a Clique?",
+  category: "hospedagem",
+  categoryLabel: "Hospedagens & experiências",
+  description: "Mostrar como é estar aí.",
+  coverImage: PHOTOS[0].src,
+  location: "",
+  year: "",
+  images: PHOTOS.map((photo) => {
+    const match = portfolioPhotos.find((item) => item.src === photo.src);
+    return {
+      src: photo.src,
+      thumbnail: match?.thumbnail ?? photo.src,
+      alt: photo.alt,
+      orientation: match?.orientation ?? "landscape",
+      width: match?.width ?? 1600,
+      height: match?.height ?? 1067,
+    };
+  }),
+};
+
 export const ECliqueSection: React.FC = () => {
   const reducedMotion = useReducedMotion();
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section
@@ -101,12 +127,16 @@ export const ECliqueSection: React.FC = () => {
                 ease: [0.22, 1, 0.36, 1],
               }}
             >
-              <div
-                className={`relative ${photo.aspect} rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(0,0,0,0.35)]`}
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-label={`Ampliar fotografia: ${photo.alt}`}
+                onClick={() => setOpenIndex(index)}
+                className={`relative block w-full ${photo.aspect} rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(0,0,0,0.35)] cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d6b985]`}
               >
                 <img
                   src={photo.src}
-                  alt={photo.alt}
+                  alt=""
                   loading="lazy"
                   decoding="async"
                   className={`w-full h-full object-cover ${photo.focus} transition-all duration-500 ease-out group-hover:scale-[1.03] group-hover:contrast-[1.03]`}
@@ -120,11 +150,26 @@ export const ECliqueSection: React.FC = () => {
                     {photo.tag}
                   </span>
                 </div>
-              </div>
+
+                <span
+                  aria-hidden="true"
+                  className="absolute top-4 left-4 w-8 h-8 rounded-full bg-[#171713]/50 backdrop-blur-md border border-[#FAF7F2]/10 flex items-center justify-center text-[#FAF7F2] text-[14px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                >
+                  ↗
+                </span>
+              </button>
             </motion.div>
           ))}
         </div>
       </div>
+
+      {openIndex !== null && (
+        <PortfolioPhotoViewer
+          project={VIEWER_PROJECT}
+          initialIndex={openIndex}
+          onClose={() => setOpenIndex(null)}
+        />
+      )}
     </section>
   );
 };
