@@ -543,14 +543,6 @@ export const portfolioProjects: PortfolioProject[] = [
         "height": 1600
       },
       {
-        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/aniversario-gabriela/img_5275.webp",
-        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/aniversario-gabriela/thumbs/img_5275.webp",
-        "alt": "Celebração e espontaneidade de 15 anos — Detalhe 4",
-        "orientation": "portrait",
-        "width": 1200,
-        "height": 1600
-      },
-      {
         "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/aniversario-gabriela/img_5302.webp",
         "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/aniversario-gabriela/thumbs/img_5302.webp",
         "alt": "Celebração e espontaneidade de 15 anos — Detalhe 5",
