@@ -1,20 +1,32 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { portfolioPhotos, portfolioPhotoCount, portfolioProjects, type PortfolioProject } from "../data/portfolio";
 import { PortfolioPhotoViewer } from "./PortfolioPhotoViewer";
 import "./PortfolioGallerySection.css";
 
 const PREVIEW_COUNT = 12;
+const STEP = 20;
 const projectsById = new Map(portfolioProjects.map((project) => [project.id, project]));
 
 export function PortfolioGallerySection() {
-  const [expanded, setExpanded] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PREVIEW_COUNT);
   const [selection, setSelection] = useState<{ project: PortfolioProject; index: number } | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
-  const shown = expanded ? portfolioPhotos : portfolioPhotos.slice(0, PREVIEW_COUNT);
+  const shown = portfolioPhotos.slice(0, visibleCount);
+  const remaining = portfolioPhotoCount - shown.length;
+  const nextStep = Math.min(STEP, remaining);
+
+  // Ao recolher, a página encolhe; volta ao início da galeria para a pessoa não se perder.
+  const showLess = () => {
+    setVisibleCount(PREVIEW_COUNT);
+    requestAnimationFrame(() =>
+      sectionRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" }),
+    );
+  };
 
   return (
-    <section id="a-clique" className="clique-gallery" aria-labelledby="clique-gallery-heading">
+    <section ref={sectionRef} id="a-clique" className="clique-gallery" aria-labelledby="clique-gallery-heading">
       <div className="clique-gallery-shell">
         <header className="clique-gallery-header">
           <h2 id="clique-gallery-heading">Todas as <em>fotografias.</em></h2>
@@ -59,15 +71,27 @@ export function PortfolioGallerySection() {
 
         {portfolioPhotoCount > PREVIEW_COUNT && (
           <div className="clique-gallery-more">
-            <button
-              type="button"
-              aria-expanded={expanded}
-              aria-controls="clique-photo-grid"
-              onClick={() => setExpanded((current) => !current)}
-            >
-              {expanded ? "Mostrar menos" : `Ver todas as ${portfolioPhotoCount} fotografias`}
-              <span aria-hidden="true">{expanded ? "−" : "+"}</span>
-            </button>
+            <div className="clique-gallery-more-actions">
+              {remaining > 0 && (
+                <button
+                  type="button"
+                  aria-controls="clique-photo-grid"
+                  onClick={() => setVisibleCount((count) => Math.min(count + STEP, portfolioPhotoCount))}
+                >
+                  Ver mais {nextStep}
+                  <span aria-hidden="true">+</span>
+                </button>
+              )}
+              {visibleCount > PREVIEW_COUNT && (
+                <button type="button" className="is-secondary" aria-controls="clique-photo-grid" onClick={showLess}>
+                  Ver menos
+                  <span aria-hidden="true">−</span>
+                </button>
+              )}
+            </div>
+            <p className="clique-gallery-progress" aria-hidden="true">
+              {shown.length} de {portfolioPhotoCount}
+            </p>
           </div>
         )}
         <p className="sr-only" role="status">{shown.length} de {portfolioPhotoCount} fotografias exibidas.</p>
