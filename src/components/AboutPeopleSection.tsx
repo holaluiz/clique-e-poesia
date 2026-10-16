@@ -9,9 +9,6 @@ export const AboutPeopleSection: React.FC = () => {
       {/* Subtle editorial paper grain texture */}
       <div className="absolute inset-0 editorial-paper-texture pointer-events-none opacity-20" />
 
-      {/* Transição suave em degradê para a seção escura seguinte (sem divisores) */}
-      <div className="absolute bottom-0 left-0 right-0 h-36 sm:h-48 bg-gradient-to-b from-transparent via-[#F3EBDD]/60 to-[#171713] pointer-events-none z-10" />
-
       <div className="relative z-10 w-full max-w-[1200px] mx-auto">
         {/* ========================================================================= */}
         {/* PARTE 1 — CABEÇALHO EDITORIAL                                             */}
