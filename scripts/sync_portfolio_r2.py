@@ -2,13 +2,29 @@ import os
 import re
 import io
 import json
+import unicodedata
 import urllib.request
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image, ImageOps
 
-ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "0b85653a3fda604ea469fb2723afa5cb")
-API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+# Load Cloudflare credentials dynamically without exposing secrets in Git
+ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN")
+
+if not (ACCOUNT_ID and API_TOKEN):
+    mcp_config = os.path.expanduser("~/.gemini/config/mcp_config.json")
+    if os.path.exists(mcp_config):
+        try:
+            with open(mcp_config, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                cf = cfg.get("mcpServers", {}).get("cloudflare", {}).get("env", {})
+                ACCOUNT_ID = ACCOUNT_ID or cf.get("CLOUDFLARE_ACCOUNT_ID")
+                API_TOKEN = API_TOKEN or cf.get("CLOUDFLARE_API_TOKEN")
+        except Exception:
+            pass
+
+ACCOUNT_ID = ACCOUNT_ID or "0b85653a3fda604ea469fb2723afa5cb"
 BUCKET = "umcaracaramelo"
 CDN_BASE = "https://media.umcaracaramelo.com.br"
 MANIFEST_FILE = "tmp/r2_sync_manifest.json"
@@ -25,6 +41,18 @@ PROJECTS_CONFIG = [
         "year": "2024",
         "alt_prefix": "Chalé e acolhimento na Mantiqueira",
         "max_photos": 33
+    },
+    {
+        "folder": "POUSADA PONTAL",
+        "id": "pousada-pontal",
+        "title": "Pousada Pontal",
+        "category": "hospedagem",
+        "categoryLabel": "Hospedagens & Chalés",
+        "description": "Refúgio e serenidade em meio à natureza tropical. Registramos os chalés acolhedores, o café da manhã artesanal ao amanhecer e tardes douradas à beira da piscina.",
+        "location": "Litoral & Natureza Tropical",
+        "year": "2024",
+        "alt_prefix": "Pousada Pontal, refúgio tropical e serenidade",
+        "max_photos": 13
     },
     {
         "folder": "CASAMENTO THALITA",
@@ -162,8 +190,9 @@ PROJECTS_CONFIG = [
 
 def sanitize_name(name: str) -> str:
     base = os.path.splitext(name)[0]
-    base = re.sub(r'[^a-zA-Z0-9_\-]+', '-', base).strip('-').lower()
-    return base or "photo"
+    n = unicodedata.normalize('NFKD', base).encode('ascii', 'ignore').decode('ascii')
+    clean = re.sub(r'[^a-zA-Z0-9_\-]+', '-', n).strip('-').lower()
+    return clean or "photo"
 
 def upload_to_r2(key: str, data: bytes) -> bool:
     url = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/r2/buckets/{BUCKET}/objects/{key}"
@@ -181,17 +210,6 @@ def upload_to_r2(key: str, data: bytes) -> bool:
             return res.status == 200
     except Exception as e:
         print(f"Error uploading {key}: {e}")
-        return False
-
-def check_exists_on_r2(key: str) -> bool:
-    url = f"{CDN_BASE}/{key}"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
-    try:
-        with urllib.request.urlopen(req, timeout=8) as res:
-            return res.status == 200
-    except urllib.error.HTTPError as e:
-        return e.code == 200
-    except Exception:
         return False
 
 def process_and_upload_image(file_path: str, project_id: str, photo_index: int, total_in_proj: int):
@@ -309,7 +327,13 @@ def main():
             print(f"Warning: Directory not found for: {proj['folder']}")
             continue
 
-        raw_files = [f for f in sorted(os.listdir(dir_path)) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+        # Recursively find image files (handles nested subfolders)
+        raw_files = []
+        for root, dirs, files in os.walk(dir_path):
+            for f in sorted(files):
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                    raw_files.append(os.path.join(root, f))
+
         max_p = proj.get("max_photos", len(raw_files))
 
         if len(raw_files) > max_p:
@@ -320,8 +344,7 @@ def main():
 
         print(f"  [{proj_id}] {os.path.basename(dir_path)}: {len(selected_files)} / {len(raw_files)} photos selected for upload")
 
-        for idx, fname in enumerate(selected_files):
-            fpath = os.path.join(dir_path, fname)
+        for idx, fpath in enumerate(selected_files):
             tasks.append((fpath, proj_id, idx, len(selected_files)))
 
     print(f"\nTotal tasks to process and upload: {len(tasks)}")
@@ -329,17 +352,17 @@ def main():
     processed_results = []
     completed = 0
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_and_upload_image, *t): t for t in tasks}
-        for future in as_completed(futures):
-            res = future.result()
-            completed += 1
-            if res:
-                processed_results.append(res)
-                if completed % 10 == 0 or completed == len(tasks):
-                    print(f"Progress: {completed}/{len(tasks)} processed and uploaded ({res['project_id']}: {res['width']}x{res['height']}, {res['size_kb']} KB)")
+    if tasks:
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(process_and_upload_image, *t): t for t in tasks}
+            for future in as_completed(futures):
+                res = future.result()
+                completed += 1
+                if res:
+                    processed_results.append(res)
+                    print(f"Progress: {completed}/{len(tasks)} processed and uploaded ({res['project_id']}: {res['file']} -> {res['width']}x{res['height']}, {res['size_kb']} KB)")
 
-    # Group by project
+    # Group newly processed by project
     by_project = {}
     for r in processed_results:
         by_project.setdefault(r["project_id"], []).append(r)
@@ -351,20 +374,29 @@ def main():
     final_projects = []
     for proj in PROJECTS_CONFIG:
         pid = proj["id"]
-        if pid in existing_by_id:
+        if pid in existing_by_id and pid not in by_project:
             final_projects.append(existing_by_id[pid])
             continue
 
         images = by_project.get(pid, [])
         if not images:
+            if pid in existing_by_id:
+                final_projects.append(existing_by_id[pid])
             continue
 
         formatted_images = []
         for idx, img in enumerate(images):
+            # If original filename has a meaningful title (not starting with IMG_/DSC), use it as poetic alt
+            raw_title = os.path.splitext(img["file"])[0]
+            if not re.match(r'^(IMG|DSC|_MG|PHOTO)[-_0-9]', raw_title, re.IGNORECASE):
+                alt_text = f"{proj['title']} — {raw_title}"
+            else:
+                alt_text = f"{proj['alt_prefix']} — Detalhe {idx + 1}"
+
             formatted_images.append({
                 "src": img["src"],
                 "thumbnail": img["thumbnail"],
-                "alt": f"{proj['alt_prefix']} — Detalhe {idx + 1}",
+                "alt": alt_text,
                 "orientation": img["orientation"],
                 "width": img["width"],
                 "height": img["height"]
@@ -394,7 +426,7 @@ def main():
         json.dump(final_projects, f, ensure_ascii=False, indent=2)
 
     total_images = sum(len(p["images"]) for p in final_projects)
-    print(f"\nSuccessfully uploaded and prepared {len(final_projects)} projects with {total_images} total images!")
+    print(f"\nSuccessfully prepared {len(final_projects)} projects with {total_images} total images!")
     print(f"Manifest written to {MANIFEST_FILE}")
 
     # Generate src/data/portfolio.ts

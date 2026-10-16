@@ -309,6 +309,122 @@ export const portfolioProjects: PortfolioProject[] = [
     ]
   },
   {
+    "id": "pousada-pontal",
+    "title": "Pousada Pontal",
+    "category": "hospedagem",
+    "categoryLabel": "Hospedagens & Chalés",
+    "description": "Refúgio e serenidade em meio à natureza tropical. Registramos os chalés acolhedores, o café da manhã artesanal ao amanhecer e tardes douradas à beira da piscina.",
+    "coverImage": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/bolos-caseiros-a-luz-do-sol.webp",
+    "location": "Litoral & Natureza Tropical",
+    "year": "2024",
+    "images": [
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/bolos-caseiros-a-luz-do-sol.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/bolos-caseiros-a-luz-do-sol.webp",
+        "alt": "Pousada Pontal — Bolos Caseiros à Luz do Sol",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/buffet-tropical-ao-amanhecer-ensolarado.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/buffet-tropical-ao-amanhecer-ensolarado.webp",
+        "alt": "Pousada Pontal — Buffet Tropical ao Amanhecer ensolarado",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/cafe-tropical-com-sucos-frescos.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/cafe-tropical-com-sucos-frescos.webp",
+        "alt": "Pousada Pontal — Café Tropical com Sucos Frescos",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 900
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/capela-branca-no-jardim-tropical.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/capela-branca-no-jardim-tropical.webp",
+        "alt": "Pousada Pontal — Capela Branca no Jardim Tropical",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/chales-tropicais-a-luz-do-sol.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/chales-tropicais-a-luz-do-sol.webp",
+        "alt": "Pousada Pontal — Chalés Tropicais à Luz do Sol",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/pavilhao-tropical-ao-entardecer.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/pavilhao-tropical-ao-entardecer.webp",
+        "alt": "Pousada Pontal — Pavilhão Tropical ao Entardecer",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/patio-tropical-com-pergolado-rustico.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/patio-tropical-com-pergolado-rustico.webp",
+        "alt": "Pousada Pontal — Pátio Tropical com Pergolado Rústico",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/pergola-rustica-ao-entardecer.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/pergola-rustica-ao-entardecer.webp",
+        "alt": "Pousada Pontal — Pérgola Rústica ao Entardecer",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/refugio-tropical-com-piscina-e-palmeiras.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/refugio-tropical-com-piscina-e-palmeiras.webp",
+        "alt": "Pousada Pontal — Refúgio Tropical com Piscina e Palmeiras",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/refugio-tropical-entre-palmeiras-e-chales.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/refugio-tropical-entre-palmeiras-e-chales.webp",
+        "alt": "Pousada Pontal — Refúgio Tropical entre Palmeiras e Chalés",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/refugio-tropical-a-beira-da-piscina-2.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/refugio-tropical-a-beira-da-piscina-2.webp",
+        "alt": "Pousada Pontal — Refúgio Tropical à Beira da Piscina 2",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/refugio-tropical-a-beira-da-piscina.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/refugio-tropical-a-beira-da-piscina.webp",
+        "alt": "Pousada Pontal — Refúgio Tropical à Beira da Piscina",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      },
+      {
+        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/refugio-tropical-entre-palmeiras-e-bangalos.webp",
+        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/pousada-pontal/thumbs/refugio-tropical-entre-palmeiras-e-bangalos.webp",
+        "alt": "Pousada Pontal — Refúgio tropical entre palmeiras e bangalôs",
+        "orientation": "landscape",
+        "width": 1536,
+        "height": 1024
+      }
+    ]
+  },
+  {
     "id": "casamento-thalita",
     "title": "Casamento Thalita",
     "category": "casamentos",
