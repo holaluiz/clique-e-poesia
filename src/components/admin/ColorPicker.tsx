@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Baseline, Check, RotateCcw } from "lucide-react";
 
 // Paleta com as cores da Clique e Poesia e algumas de apoio.
-const SWATCHES = [
+export const SWATCHES = [
   { name: "Preto", value: "#171713" },
   { name: "Verde", value: "#384936" },
   { name: "Oliva", value: "#7B7955" },
@@ -21,7 +21,7 @@ interface ColorPickerProps {
   onReset: () => void;
 }
 
-function toHex(color: string | undefined) {
+export function toHex(color: string | undefined) {
   if (!color) return "#171713";
   if (color.startsWith("#")) return color.length === 4 ? `#${[...color.slice(1)].map((c) => c + c).join("")}` : color;
   const rgb = color.match(/\d+/g);

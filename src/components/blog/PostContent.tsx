@@ -55,7 +55,31 @@ function toSafeHtml(content: string) {
   return container.innerHTML;
 }
 
-export const PostContent: React.FC<{ content: string; className?: string }> = ({ content, className = "" }) => {
+export const DEFAULT_TEXT_COLOR = "#20201b";
+export const DEFAULT_LINK_COLOR = "#384936";
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
+/** Cores gerais do texto (escolhidas no painel) como variáveis CSS usadas em blog.css. */
+export function postColorStyle(textColor?: string | null, linkColor?: string | null) {
+  const style: Record<string, string> = {};
+  if (textColor && HEX_COLOR.test(textColor)) style["--post-text"] = textColor;
+  if (linkColor && HEX_COLOR.test(linkColor)) style["--post-link"] = linkColor;
+  return style as React.CSSProperties;
+}
+
+export const PostContent: React.FC<{
+  content: string;
+  className?: string;
+  textColor?: string | null;
+  linkColor?: string | null;
+}> = ({ content, className = "", textColor, linkColor }) => {
   const html = useMemo(() => toSafeHtml(content), [content]);
-  return <div className={`blog-prose ${className}`} dangerouslySetInnerHTML={{ __html: html }} />;
+  return (
+    <div
+      className={`blog-prose ${className}`}
+      style={postColorStyle(textColor, linkColor)}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 };

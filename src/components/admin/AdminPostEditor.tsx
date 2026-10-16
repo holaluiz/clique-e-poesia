@@ -13,10 +13,12 @@ import {
 } from "../../lib/blog";
 import { handleLinkClick, navigate } from "../../lib/router";
 import { CoverCropDialog } from "./CoverCropDialog";
+import { DEFAULT_LINK_COLOR, DEFAULT_TEXT_COLOR } from "../blog/PostContent";
 import { RichTextEditor } from "./RichTextEditor";
 import {
   CategoryPicker,
   CharCount,
+  ColorField,
   GooglePreview,
   SEO_DESCRIPTION_LIMIT,
   SEO_TITLE_LIMIT,
@@ -40,6 +42,8 @@ const EMPTY: BlogPostDraft = {
   tags: [],
   seo_title: "",
   seo_description: "",
+  text_color: null,
+  link_color: null,
 };
 
 function toDraft(post: BlogPost): BlogPostDraft {
@@ -56,6 +60,8 @@ function toDraft(post: BlogPost): BlogPostDraft {
     tags: post.tags ?? [],
     seo_title: post.seo_title ?? "",
     seo_description: post.seo_description ?? "",
+    text_color: post.text_color,
+    link_color: post.link_color,
   };
 }
 
@@ -230,6 +236,8 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
             value={form.content}
             onChange={(html) => update("content", html)}
             onUploadImage={uploadImage}
+            textColor={form.text_color}
+            linkColor={form.link_color}
             onError={(text) => setNotice({ tone: "error", text })}
           />
           <p className="text-[12.5px] text-[#171713]/50 leading-relaxed">
@@ -316,6 +324,22 @@ export const AdminPostEditor: React.FC<{ postId: string | null }> = ({ postId })
             <CategoryPicker value={form.category_ids} onChange={(ids) => update("category_ids", ids)} />
 
             <TagInput value={form.tags} onChange={(tags) => update("tags", tags)} />
+
+            <ColorField
+              label="Cor do texto"
+              hint="Cor de todo o texto. Trechos coloridos no editor continuam com a cor deles."
+              value={form.text_color}
+              fallback={DEFAULT_TEXT_COLOR}
+              onChange={(color) => update("text_color", color)}
+            />
+
+            <ColorField
+              label="Cor dos links"
+              hint="Cor das palavras com link no texto."
+              value={form.link_color}
+              fallback={DEFAULT_LINK_COLOR}
+              onChange={(color) => update("link_color", color)}
+            />
           </SettingsCard>
 
           <SettingsCard title="SEO" description="Como o texto aparece no Google e quando o link é compartilhado.">

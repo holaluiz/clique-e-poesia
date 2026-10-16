@@ -159,10 +159,16 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
           </div>
         )}
 
-        <PostContent content={post.content} className="max-w-[680px] mx-auto px-6" />
+        {/* Texto, tags e rodapé com a mesma largura e margens da foto de capa. */}
+        <PostContent
+          content={post.content}
+          textColor={post.text_color}
+          linkColor={post.link_color}
+          className="max-w-[1000px] mx-auto px-4 sm:px-6"
+        />
 
         {post.tags?.length > 0 && (
-          <ul className="max-w-[680px] mx-auto px-6 pt-12 flex flex-wrap gap-2" aria-label="Tags">
+          <ul className="max-w-[1000px] mx-auto px-4 sm:px-6 pt-12 flex flex-wrap gap-2" aria-label="Tags">
             {post.tags.map((tag) => (
               <li key={tag} className="px-3 py-1 rounded-full bg-[#171713]/6 text-[13px] text-[#171713]/70">
                 #{tag}
@@ -171,12 +177,14 @@ export const BlogPostPage: React.FC<{ slug: string }> = ({ slug }) => {
           </ul>
         )}
 
-        <footer className="max-w-[680px] mx-auto px-6 pt-16 mt-16 border-t border-[#171713]/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="font-handwriting text-[28px] text-[#384936]">Um clique, uma poesia.</span>
-          <a href="/blog" onClick={handleLinkClick} className="text-[14px] font-medium text-[#384936] hover:underline underline-offset-4">
-            Ler outros textos →
-          </a>
-        </footer>
+        <div className="max-w-[1000px] mx-auto px-4 sm:px-6 mt-16">
+          <footer className="pt-16 border-t border-[#171713]/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="font-handwriting text-[28px] text-[#384936]">Um clique, uma poesia.</span>
+            <a href="/blog" onClick={handleLinkClick} className="text-[14px] font-medium text-[#384936] hover:underline underline-offset-4">
+              Ler outros textos →
+            </a>
+          </footer>
+        </div>
       </article>
     </BlogShell>
   );

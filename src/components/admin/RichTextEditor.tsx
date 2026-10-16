@@ -5,6 +5,7 @@ import Image from "@tiptap/extension-image";
 import TextAlign from "@tiptap/extension-text-align";
 import { Color, TextStyle } from "@tiptap/extension-text-style";
 import { Placeholder } from "@tiptap/extensions";
+import { postColorStyle } from "../blog/PostContent";
 import { ColorPicker } from "./ColorPicker";
 import { LinkDialog, type LinkValue } from "./LinkDialog";
 import {
@@ -37,6 +38,9 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   onUploadImage: (file: File) => Promise<string>;
   onError: (message: string) => void;
+  /** Cores gerais do texto escolhidas nas configurações (vazias: padrão). */
+  textColor?: string | null;
+  linkColor?: string | null;
 }
 
 const ToolButton: React.FC<{
@@ -69,7 +73,7 @@ function imageFiles(list: FileList | null | undefined) {
   return Array.from(list ?? []).filter((file) => file.type.startsWith("image/"));
 }
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onUploadImage, onError }) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, onUploadImage, onError, textColor, linkColor }) => {
   const [uploading, setUploading] = useState(false);
   const [linkDialog, setLinkDialog] = useState<{
     href: string;
@@ -281,7 +285,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange,
           }}
         />
       </div>
-      <EditorContent editor={editor} />
+      <div style={postColorStyle(textColor, linkColor)}>
+        <EditorContent editor={editor} />
+      </div>
       {linkDialog && (
         <LinkDialog
           initialHref={linkDialog.href}

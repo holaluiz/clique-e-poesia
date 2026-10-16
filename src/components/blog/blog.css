@@ -1,6 +1,7 @@
-/* Tipografia dos textos do blog: leitura confortável sobre o papel creme. */
+/* Tipografia dos textos do blog: leitura confortável sobre o papel creme.
+   --post-text e --post-link vêm das cores escolhidas no painel para cada texto. */
 .blog-prose {
-  color: #20201b;
+  color: var(--post-text, #20201b);
   font-size: clamp(17px, 1.25vw, 19px);
   line-height: 1.75;
 }
@@ -15,7 +16,7 @@
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
-  color: #171713;
+  color: var(--post-text, #171713);
 }
 
 .blog-prose h2 {
@@ -30,18 +31,24 @@
 
 .blog-prose strong {
   font-weight: 600;
-  color: #171713;
+  color: var(--post-text, #171713);
 }
 
+/* Links bem visíveis: cor forte, peso maior e sublinhado grosso. */
 .blog-prose a {
-  color: #384936;
+  color: var(--post-link, #384936);
+  font-weight: 600;
   text-decoration: underline;
-  text-decoration-color: rgb(56 73 54 / 40%);
-  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: color-mix(in srgb, var(--post-link, #384936) 55%, transparent);
+  text-underline-offset: 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease, text-decoration-color 0.2s ease;
 }
 
 .blog-prose a:hover {
   text-decoration-color: currentColor;
+  background-color: color-mix(in srgb, var(--post-link, #384936) 10%, transparent);
 }
 
 .blog-prose blockquote {

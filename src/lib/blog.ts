@@ -16,6 +16,8 @@ export interface BlogPost {
   tags: string[];
   seo_title: string | null;
   seo_description: string | null;
+  text_color: string | null;
+  link_color: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,8 @@ export type BlogPostDraft = Pick<
   | "tags"
   | "seo_title"
   | "seo_description"
+  | "text_color"
+  | "link_color"
 >;
 
 export interface BlogCategory {

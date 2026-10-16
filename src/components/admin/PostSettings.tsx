@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import { listCategories, SEO_DESCRIPTION_LIMIT, SEO_TITLE_LIMIT, type BlogCategory } from "../../lib/blog";
+import { SWATCHES, toHex } from "./ColorPicker";
 import { inputClass } from "./ui";
 
 /** Bloco da coluna lateral do editor, com título. */
@@ -152,3 +153,60 @@ export function dateInputToIso(value: string) {
 }
 
 export { SEO_DESCRIPTION_LIMIT, SEO_TITLE_LIMIT };
+
+/** Cor geral do texto ou dos links: paleta da marca, outra cor ou padrão (vazio). */
+export const ColorField: React.FC<{
+  label: string;
+  hint: string;
+  value: string | null;
+  fallback: string;
+  onChange: (color: string | null) => void;
+}> = ({ label, hint, value, fallback, onChange }) => (
+  <fieldset className="space-y-2">
+    <legend className="flex w-full items-center justify-between text-[13px] font-medium text-[#171713]/80">
+      {label}
+      <span className="flex items-center gap-1.5 text-[12px] font-normal text-[#171713]/50">
+        <span className="w-3.5 h-3.5 rounded-full border border-[#171713]/15" style={{ backgroundColor: value ?? fallback }} />
+        {value ? value.toUpperCase() : "Padrão"}
+      </span>
+    </legend>
+    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+      <button
+        type="button"
+        onClick={() => onChange(null)}
+        aria-pressed={!value}
+        className={`h-7 px-2.5 rounded-full border text-[12px] transition-colors ${
+          !value ? "border-[#384936] bg-[#384936] text-white" : "border-[#171713]/15 text-[#171713]/70 hover:bg-[#171713]/5"
+        }`}
+      >
+        Padrão
+      </button>
+      {SWATCHES.map((swatch) => {
+        const active = value?.toLowerCase() === swatch.value.toLowerCase();
+        return (
+          <button
+            key={swatch.value}
+            type="button"
+            title={swatch.name}
+            aria-label={swatch.name}
+            aria-pressed={active}
+            onClick={() => onChange(swatch.value.toLowerCase())}
+            className={`w-7 h-7 rounded-full transition ${active ? "ring-2 ring-offset-2 ring-[#171713]/60" : "hover:ring-2 hover:ring-[#171713]/20"}`}
+            style={{ backgroundColor: swatch.value }}
+          />
+        );
+      })}
+      <label title="Outra cor" className="relative w-7 h-7 rounded-full cursor-pointer overflow-hidden border border-dashed border-[#171713]/30 flex items-center justify-center text-[14px] text-[#171713]/60 hover:bg-[#171713]/5">
+        +
+        <input
+          type="color"
+          value={toHex(value ?? fallback)}
+          onChange={(event) => onChange(event.target.value.toLowerCase())}
+          aria-label={`${label}: outra cor`}
+          className="absolute inset-0 opacity-0 cursor-pointer"
+        />
+      </label>
+    </div>
+    <span className="block text-[12px] text-[#171713]/50">{hint}</span>
+  </fieldset>
+);
