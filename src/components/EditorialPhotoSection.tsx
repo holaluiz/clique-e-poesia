@@ -26,6 +26,8 @@ interface EditorialPhotoSectionProps {
   paragraphs: [React.ReactNode, React.ReactNode?];
   photos: EditorialPhoto[];
   category: PortfolioCategory;
+  /** Foto de fundo, desfocada e quase transparente; uma miniatura basta. */
+  backdrop?: string;
 }
 
 // Paletas: escura (sobre #171713) e clara (papel creme), mantendo o mesmo ritmo editorial.
@@ -39,6 +41,7 @@ const TONES = {
     muted: "text-[#D8CEBE]/70",
     strong: "[&_strong]:font-semibold [&_strong]:text-[#FAF7F2]",
     shadow: "shadow-[0_20px_45px_rgba(0,0,0,0.35)]",
+    backdropFade: "from-[#171713] to-[#171713]",
   },
   light: {
     section: "bg-[#F3EBDD] text-[#171713]",
@@ -49,6 +52,7 @@ const TONES = {
     muted: "text-[#7B7955]",
     strong: "[&_strong]:font-semibold [&_strong]:text-[#171713]",
     shadow: "shadow-[0_16px_40px_rgba(23,23,19,0.12)]",
+    backdropFade: "from-[#F3EBDD] to-[#F3EBDD]",
   },
 };
 
@@ -61,6 +65,7 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
   paragraphs,
   photos,
   category,
+  backdrop,
 }) => {
   const reducedMotion = useReducedMotion();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -98,6 +103,19 @@ export const EditorialPhotoSection: React.FC<EditorialPhotoSectionProps> = ({
       aria-labelledby={headingId}
       className={`relative py-24 sm:py-32 lg:py-36 px-6 sm:px-10 lg:px-16 overflow-hidden ${colors.section}`}
     >
+      {/* Foto de fundo desfocada; o degradê funde as bordas com as seções vizinhas. */}
+      {backdrop && (
+        <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+          <img
+            src={backdrop}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover scale-110 blur-xl opacity-[0.18]"
+          />
+          <div className={`absolute inset-0 bg-gradient-to-b via-transparent ${colors.backdropFade}`} />
+        </div>
+      )}
       <div className="relative z-10 w-full max-w-[1400px] mx-auto space-y-12 sm:space-y-16">
         {/* Cabeçalho editorial assimétrico */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-end pb-2">

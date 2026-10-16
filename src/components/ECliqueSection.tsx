@@ -61,5 +61,6 @@ export const ECliqueSection: React.FC = () => (
       </>,
     ]}
     photos={PHOTOS}
+    backdrop={`${CDN}/aldea-zen/thumbs/img_3194.webp`}
   />
 );
