@@ -6,7 +6,7 @@
   justify-content: space-between;
   gap: 24px;
   width: 100%;
-  max-width: 1040px;
+  max-width: 1240px;
   margin-inline: auto;
   font-family: var(--font-sans);
   color: #fffdf5;
@@ -35,8 +35,8 @@
 .site-header-logo img {
   display: block;
   width: auto;
-  height: 28px;
-  max-width: 170px;
+  height: 32px;
+  max-width: 200px;
   object-fit: contain;
   filter: drop-shadow(0 2px 8px rgb(0 0 0 / 16%));
 }
@@ -98,10 +98,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 32px;
-  padding: 6px 13px;
+  min-height: 35px;
+  padding: 7px 13px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 550;
   line-height: 20px;
   white-space: nowrap;
