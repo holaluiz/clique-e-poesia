@@ -29,7 +29,7 @@ export const AboutPeopleSection: React.FC = () => {
           {/* --------------------------------------------------------------------- */}
           <div className="flex flex-col space-y-6 md:space-y-4 group">
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
-            <div className="relative aspect-[3/4] w-full md:aspect-auto md:h-[calc(100svh-23rem)] md:min-h-[320px] md:max-h-[720px] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
+            <div className="relative aspect-[4/5] w-full md:w-[clamp(256px,calc((100svh-23rem)*0.8),100%)] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
                 src="/portraits/marcos.webp"
                 alt="Marcos — Fotógrafo e Designer"
@@ -37,7 +37,7 @@ export const AboutPeopleSection: React.FC = () => {
                 height={1080}
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover object-center grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
+                className="w-full h-full object-cover object-[50%_25%] grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#171713]/70 via-transparent to-transparent pointer-events-none" />
 
@@ -68,7 +68,7 @@ export const AboutPeopleSection: React.FC = () => {
           {/* --------------------------------------------------------------------- */}
           <div className="flex flex-col space-y-6 md:space-y-4 md:pt-[clamp(1.5rem,6svh,4rem)] group">
             {/* Fotografia grande, imersiva, com transição suave e cantos orgânicos */}
-            <div className="relative aspect-[3/4] w-full md:aspect-auto md:h-[calc(100svh-23rem)] md:min-h-[320px] md:max-h-[720px] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
+            <div className="relative aspect-[4/5] w-full md:w-[clamp(256px,calc((100svh-23rem)*0.8),100%)] rounded-[16px] overflow-hidden bg-[#20201B] shadow-[0_20px_45px_rgba(23,23,19,0.12)]">
               <img
                 src="/portraits/nadine.webp"
                 alt="Nadine — Fotógrafa e Redatora"
@@ -76,7 +76,7 @@ export const AboutPeopleSection: React.FC = () => {
                 height={1080}
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover object-center grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
+                className="w-full h-full object-cover object-[50%_25%] grayscale-[12%] group-hover:grayscale-0 transition-transform duration-1000 ease-out group-hover:scale-[1.03]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#171713]/70 via-transparent to-transparent pointer-events-none" />
 
