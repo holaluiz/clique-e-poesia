@@ -6,9 +6,13 @@ import { ECliqueSection } from "./components/ECliqueSection";
 import { PessoasSection } from "./components/PessoasSection";
 import { GastronomiaSection } from "./components/GastronomiaSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
+import { BlogSection } from "./components/blog/BlogSection";
+import { BlogIndexPage, BlogPostPage } from "./components/blog/BlogPages";
+import { AdminPage } from "./components/admin/AdminPage";
 import { ClosingSection } from "./components/ClosingSection";
+import { usePathname } from "./lib/router";
 
-export default function App() {
+function HomePage() {
   return (
     <div className="bg-[#F2EDE3] min-h-screen text-[#20201B] selection:bg-[#3F503F] selection:text-[#F2EDE3] font-sans antialiased">
       {/* O menu fixo aparece após a hero e sua sequência de apresentação. */}
@@ -33,9 +37,21 @@ export default function App() {
         {/* Galeria de fotografias reais do portfólio. */}
         <PortfolioGallerySection />
 
+        {/* Nosso Blog — textos publicados pelo administrador */}
+        <BlogSection />
+
         {/* Fechamento (E no fim...) */}
         <ClosingSection />
       </main>
     </div>
   );
+}
+
+export default function App() {
+  const path = usePathname();
+
+  if (path === "/admin" || path.startsWith("/admin/")) return <AdminPage path={path} />;
+  if (path === "/blog") return <BlogIndexPage />;
+  if (path.startsWith("/blog/")) return <BlogPostPage slug={decodeURIComponent(path.slice("/blog/".length))} />;
+  return <HomePage />;
 }
