@@ -191,7 +191,4 @@ export function slugify(text: string) {
     .slice(0, 80);
 }
 
-export function formatPostDate(date: string | null) {
-  if (!date) return "";
-  return new Date(date).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
-}
+export { formatPostDate } from "./format";

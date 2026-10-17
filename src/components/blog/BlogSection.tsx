@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { listPublishedPosts, type BlogPost } from "../../lib/blog";
-import { supabase } from "../../lib/supabase";
+import React, { useEffect, useRef, useState } from "react";
+import type { BlogPost } from "../../lib/blog";
 import { handleLinkClick } from "../../lib/router";
 import { PostCard } from "./PostCard";
 
@@ -9,22 +8,41 @@ const PREVIEW_COUNT = 3;
 type ListState = { status: "loading" } | { status: "ready"; posts: Omit<BlogPost, "content">[] } | { status: "error" };
 
 export const BlogSection: React.FC = () => {
-  const [state, setState] = useState<ListState>(supabase ? { status: "loading" } : { status: "ready", posts: [] });
+  const [state, setState] = useState<ListState>({ status: "loading" });
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (!supabase) return;
+    const section = sectionRef.current;
+    if (!section) return;
     let active = true;
-    // Busca um a mais para saber se vale mostrar o link "ver todos".
-    listPublishedPosts(PREVIEW_COUNT + 1)
-      .then((posts) => active && setState({ status: "ready", posts }))
-      .catch(() => active && setState({ status: "error" }));
+
+    // O cliente do Supabase é grande: só é baixado quando a seção chega perto da tela.
+    const load = () =>
+      import("../../lib/blog")
+        // Busca um a mais para saber se vale mostrar o link "ver todos".
+        .then(({ listPublishedPosts }) => listPublishedPosts(PREVIEW_COUNT + 1))
+        .then((posts) => active && setState({ status: "ready", posts }))
+        .catch(() => active && setState({ status: "error" }));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        load();
+      },
+      { rootMargin: "1200px 0px" },
+    );
+    observer.observe(section);
+
     return () => {
       active = false;
+      observer.disconnect();
     };
   }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="blog"
       aria-labelledby="blog-heading"
       className="relative py-24 sm:py-32 lg:py-36 px-6 sm:px-10 lg:px-16 bg-[#F3EBDD] text-[#171713] overflow-hidden"

@@ -1,5 +1,6 @@
 import React from "react";
-import { formatPostDate, type BlogPost } from "../../lib/blog";
+import type { BlogPost } from "../../lib/blog";
+import { formatPostDate } from "../../lib/format";
 import { handleLinkClick } from "../../lib/router";
 
 export const PostCard: React.FC<{ post: Omit<BlogPost, "content"> }> = ({ post }) => (
