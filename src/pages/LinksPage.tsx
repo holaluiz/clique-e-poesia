@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { navigate } from "../lib/router";
+import { scrollToSection } from "../lib/useSmoothScroll";
 
 // Ícone Pinterest
 const PinterestIcon: React.FC<{ size?: number; className?: string }> = ({
@@ -86,17 +87,9 @@ export const LinksPage: React.FC = () => {
   const handleInternalNav = (url: string, e: React.MouseEvent) => {
     e.preventDefault();
     if (url.includes("#")) {
-      navigate(url);
       const hash = url.slice(url.indexOf("#"));
-      const attemptScroll = (retries = 15) => {
-        const el = document.querySelector(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
-        } else if (retries > 0) {
-          setTimeout(() => attemptScroll(retries - 1), 60);
-        }
-      };
-      setTimeout(attemptScroll, 60);
+      navigate(url);
+      scrollToSection(hash);
     } else {
       navigate(url);
     }
@@ -196,7 +189,7 @@ export const LinksPage: React.FC = () => {
           <a
             href="/#portfolio"
             onClick={(e) => handleInternalNav("/#portfolio", e)}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             PORTFÓLIO
           </a>
@@ -205,7 +198,7 @@ export const LinksPage: React.FC = () => {
           <a
             href="/blog"
             onClick={(e) => handleInternalNav("/blog", e)}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             BLOG
           </a>
@@ -215,7 +208,7 @@ export const LinksPage: React.FC = () => {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/65 hover:bg-white/85 active:bg-white/95 backdrop-blur-md text-[#122414] font-sans font-bold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.14)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.35)] hover:scale-[1.02] text-center flex items-center justify-center gap-2 border border-white/60"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/65 hover:bg-white/85 active:bg-white/95 backdrop-blur-md text-[#122414] font-sans font-bold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.14)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.35)] hover:scale-[1.02] text-center flex items-center justify-center gap-2 border border-white/60 touch-manipulation cursor-pointer"
           >
             <WhatsAppIcon size={18} className="text-[#1CAA55] shrink-0" />
             <span>PLANEJE SEU ENSAIO</span>
@@ -223,9 +216,9 @@ export const LinksPage: React.FC = () => {
 
           {/* 4. HOSPEDAGENS & EXPERIÊNCIAS */}
           <a
-            href="/#e-a-clique"
-            onClick={(e) => handleInternalNav("/#e-a-clique", e)}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block"
+            href="/#a-clique"
+            onClick={(e) => handleInternalNav("/#a-clique", e)}
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             HOSPEDAGENS
           </a>
@@ -234,7 +227,7 @@ export const LinksPage: React.FC = () => {
           <a
             href="/#pessoas"
             onClick={(e) => handleInternalNav("/#pessoas", e)}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             RETRATOS
           </a>
@@ -243,7 +236,7 @@ export const LinksPage: React.FC = () => {
           <a
             href="/#gastronomia"
             onClick={(e) => handleInternalNav("/#gastronomia", e)}
-            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block"
+            className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             GASTRONOMIA
           </a>

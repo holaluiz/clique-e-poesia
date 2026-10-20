@@ -9,7 +9,7 @@ import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { BlogSection } from "./components/blog/BlogSection";
 import { ClosingSection } from "./components/ClosingSection";
 import { usePathname, navigate } from "./lib/router";
-import { useSmoothScroll } from "./lib/useSmoothScroll";
+import { useSmoothScroll, scrollToSection } from "./lib/useSmoothScroll";
 
 // Páginas fora da home ficam em arquivos separados: o visitante da home não baixa o painel nem o leitor do blog.
 const AdminPage = lazy(() => import("./components/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
@@ -19,18 +19,19 @@ const LinksPage = lazy(() => import("./pages/LinksPage").then((m) => ({ default:
 
 function HomePage() {
   useEffect(() => {
-    if (window.location.hash) {
-      const hash = window.location.hash;
-      const attemptScroll = (retries = 15) => {
-        const el = document.querySelector(hash);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
-        } else if (retries > 0) {
-          setTimeout(() => attemptScroll(retries - 1), 60);
-        }
-      };
-      setTimeout(attemptScroll, 60);
-    }
+    const handleHash = () => {
+      if (window.location.hash) {
+        scrollToSection(window.location.hash);
+      }
+    };
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    window.addEventListener("clique:navigate", handleHash);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("clique:navigate", handleHash);
+    };
   }, []);
 
   return (
