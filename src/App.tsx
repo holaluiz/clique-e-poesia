@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { StickyNavbar } from "./components/Navbar";
 import { HeroSection } from "./components/HeroSection";
 import { AboutPeopleSection } from "./components/AboutPeopleSection";
@@ -8,15 +8,31 @@ import { GastronomiaSection } from "./components/GastronomiaSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { BlogSection } from "./components/blog/BlogSection";
 import { ClosingSection } from "./components/ClosingSection";
-import { usePathname } from "./lib/router";
+import { usePathname, navigate } from "./lib/router";
 import { useSmoothScroll } from "./lib/useSmoothScroll";
 
 // Páginas fora da home ficam em arquivos separados: o visitante da home não baixa o painel nem o leitor do blog.
 const AdminPage = lazy(() => import("./components/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
 const BlogIndexPage = lazy(() => import("./components/blog/BlogPages").then((m) => ({ default: m.BlogIndexPage })));
 const BlogPostPage = lazy(() => import("./components/blog/BlogPages").then((m) => ({ default: m.BlogPostPage })));
+const LinksPage = lazy(() => import("./pages/LinksPage").then((m) => ({ default: m.LinksPage })));
 
 function HomePage() {
+  useEffect(() => {
+    if (window.location.hash) {
+      const hash = window.location.hash;
+      const attemptScroll = (retries = 15) => {
+        const el = document.querySelector(hash);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        } else if (retries > 0) {
+          setTimeout(() => attemptScroll(retries - 1), 60);
+        }
+      };
+      setTimeout(attemptScroll, 60);
+    }
+  }, []);
+
   return (
     <div className="bg-[#F2EDE3] min-h-screen text-[#20201B] selection:bg-[#3F503F] selection:text-[#F2EDE3] font-sans antialiased">
       {/* O menu fixo aparece após a hero e sua sequência de apresentação. */}
@@ -55,10 +71,21 @@ export default function App() {
   const path = usePathname();
   useSmoothScroll();
 
+  useEffect(() => {
+    if (path === "/links" || path.startsWith("/links/") || path === "/linktree" || path.startsWith("/linktree/")) {
+      document.title = "Links Oficiais — Clique e Poesia | Um clique, uma poesia!";
+    } else {
+      document.title = "Clique e Poesia — Um Clique, uma poesia!";
+    }
+  }, [path]);
+
   let page: React.ReactNode = <HomePage />;
   if (path === "/admin" || path.startsWith("/admin/")) page = <AdminPage path={path} />;
   else if (path === "/blog") page = <BlogIndexPage />;
   else if (path.startsWith("/blog/")) page = <BlogPostPage slug={decodeURIComponent(path.slice("/blog/".length))} />;
+  else if (path === "/links" || path.startsWith("/links/") || path === "/linktree" || path.startsWith("/linktree/")) {
+    page = <LinksPage />;
+  }
 
   return <Suspense fallback={<div className="min-h-screen bg-[#F3EBDD]" />}>{page}</Suspense>;
 }

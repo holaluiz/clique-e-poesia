@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+﻿import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   portfolioPhotos,
@@ -114,7 +114,7 @@ export function PortfolioGallerySection() {
   };
 
   return (
-    <section ref={sectionRef} id="a-clique" className="clique-gallery" aria-labelledby="clique-gallery-heading">
+    <section ref={sectionRef} id="portfolio" className="clique-gallery" aria-labelledby="clique-gallery-heading">
       <div className="clique-gallery-shell">
         <header className="clique-gallery-header">
           <h2 id="clique-gallery-heading">Todas as <em>fotografias.</em></h2>

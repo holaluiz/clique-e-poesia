@@ -28,8 +28,8 @@ export const HeroSection: React.FC = () => {
       <div ref={containerRef} className="hero-section">
         <div className="hero-photograph" aria-hidden="true">
           <img
-            src="/hero-bg-1920.webp"
-            srcSet="/hero-bg-1280.webp 1280w, /hero-bg-1920.webp 1920w"
+            src="/hero-bg-3840.webp"
+            srcSet="/hero-bg-1280.webp 1280w, /hero-bg-1920.webp 1920w, /hero-bg-3840.webp 3840w"
             sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
             alt=""
             fetchPriority="high"
@@ -66,7 +66,7 @@ export const HeroSection: React.FC = () => {
               <WhatsAppIcon className="w-5 h-5 shrink-0" />
               <span>Planeje seu ensaio aqui</span>
             </a>
-            <a href="#a-clique" className="hero-button hero-button-secondary">
+            <a href="#portfolio" className="hero-button hero-button-secondary">
               Ver nosso trabalho
             </a>
           </div>

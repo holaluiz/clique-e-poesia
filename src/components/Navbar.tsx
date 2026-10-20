@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { handleLinkClick } from "../lib/router";
 import "./Navbar.css";
 
 const navLinks = [
   { name: "Quem Somos", href: "#quem-somos" },
   { name: "A Clique", href: "#a-clique" },
   { name: "Pessoas", href: "#pessoas" },
+  { name: "Portfólio", href: "#portfolio" },
   { name: "Blog", href: "#blog" },
 ];
 
@@ -101,7 +103,13 @@ function Navigation({
     <nav className="site-header-navigation" aria-label={variant === "hero" ? "Navegação principal" : "Navegação principal fixa"}>
       <div className="site-nav-desktop">
         {navLinks.map(({ name, href }) => (
-          <a key={href} href={href} className="site-nav-link" aria-current={activeHref === href ? "location" : undefined}>
+          <a
+            key={href}
+            href={href}
+            onClick={href.startsWith("/") ? handleLinkClick : undefined}
+            className="site-nav-link"
+            aria-current={activeHref === href ? "location" : undefined}
+          >
             {name}
           </a>
         ))}
@@ -124,7 +132,14 @@ function Navigation({
           <ul className="site-mobile-links">
             {navLinks.map(({ name, href }) => (
               <li key={href}>
-                <a href={href} onClick={onClose} aria-current={activeHref === href ? "location" : undefined}>
+                <a
+                  href={href}
+                  onClick={(e) => {
+                    onClose();
+                    if (href.startsWith("/")) handleLinkClick(e);
+                  }}
+                  aria-current={activeHref === href ? "location" : undefined}
+                >
                   <span>{name}</span>
                   <span className="site-mobile-arrow" aria-hidden="true">↗</span>
                 </a>

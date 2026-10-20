@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { EditorialPhotoSection, type EditorialPhoto } from "./EditorialPhotoSection";
 
 const CDN = "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio";
@@ -45,7 +45,7 @@ const PHOTOS: EditorialPhoto[] = [
 
 export const ECliqueSection: React.FC = () => (
   <EditorialPhotoSection
-    id="e-a-clique"
+    id="a-clique"
     tone="dark"
     category="hospedagem"
     eyebrow="Hospedagens & experiências"

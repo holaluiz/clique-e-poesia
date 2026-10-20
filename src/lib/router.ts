@@ -4,6 +4,12 @@ import { useEffect, useState, type MouseEvent } from "react";
 const NAVIGATE_EVENT = "clique:navigate";
 
 function currentPath() {
+  if (typeof window === "undefined") return "/";
+  const hash = window.location.hash.toLowerCase();
+  const search = window.location.search.toLowerCase();
+  if (hash === "#links" || hash === "#/links" || search.includes("links")) {
+    return "/links";
+  }
   const path = window.location.pathname.replace(/\/+$/, "");
   return path || "/";
 }
@@ -20,9 +26,11 @@ export function usePathname() {
   useEffect(() => {
     const update = () => setPath(currentPath());
     window.addEventListener("popstate", update);
+    window.addEventListener("hashchange", update);
     window.addEventListener(NAVIGATE_EVENT, update);
     return () => {
       window.removeEventListener("popstate", update);
+      window.removeEventListener("hashchange", update);
       window.removeEventListener(NAVIGATE_EVENT, update);
     };
   }, []);
