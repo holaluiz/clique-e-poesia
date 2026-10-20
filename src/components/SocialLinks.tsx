@@ -40,10 +40,10 @@ const Tiktok: React.FC<LucideProps> = ({ size = 24, strokeWidth = 2, ...props })
 
 // Preencha o href com o endereço do perfil; sem href o ícone aparece sem link.
 const SOCIAL_LINKS: { label: string; href: string; Icon: React.FC<LucideProps> }[] = [
-  { label: "Instagram", href: "", Icon: Instagram },
+  { label: "Instagram", href: "https://www.instagram.com/cliqueepoesia/", Icon: Instagram },
   { label: "Facebook", href: "", Icon: Facebook },
-  { label: "LinkedIn", href: "", Icon: Linkedin },
-  { label: "Pinterest", href: "", Icon: Pinterest },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/clique-poesia/about/?viewAsMember=true", Icon: Linkedin },
+  { label: "Pinterest", href: "https://pin.it/2PrRZniVb", Icon: Pinterest },
   { label: "YouTube", href: "", Icon: Youtube },
   { label: "TikTok", href: "", Icon: Tiktok },
 ];
