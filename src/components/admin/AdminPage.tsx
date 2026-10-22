@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { ChevronRight, ExternalLink, FilePlus2, FileText, Home, KeyRound, LayoutDashboard, LogOut, Menu, Tags, X } from "lucide-react";
+import { BarChart3, ChevronRight, ExternalLink, FilePlus2, FileText, Home, KeyRound, LayoutDashboard, LogOut, Menu, Tags, X } from "lucide-react";
 import { isBlogAdmin } from "../../lib/blog";
 import { handleLinkClick, navigate } from "../../lib/router";
 import { resetPageMeta, setPageMeta } from "../../lib/seo";
 import { supabase } from "../../lib/supabase";
+import { AdminAnalytics } from "./AdminAnalytics";
 import { AdminCategories } from "./AdminCategories";
 import { AdminPostList } from "./AdminPostList";
 import { AdminPostEditor } from "./AdminPostEditor";
@@ -16,7 +17,9 @@ type NavItem = { label: string; href: string; icon: React.ElementType; external?
 const NAV: { section: string; items: NavItem[] }[] = [
   {
     section: "Painel",
-    items: [{ label: "Painel Administrativo", href: "/admin", icon: LayoutDashboard, match: (path) => path === "/admin" }],
+    items: [
+      { label: "Visitas & Métricas", href: "/admin", icon: BarChart3, match: (path) => path === "/admin" || path === "/admin/visitas" },
+    ],
   },
   {
     section: "Blog",
@@ -46,7 +49,7 @@ function pageInfo(path: string): { title: string; crumbs: string[] } {
   if (path.startsWith("/admin/texto/")) return { title: "Editar texto", crumbs: ["Blog", "Textos", "Editar"] };
   if (path === "/admin/categorias") return { title: "Categorias", crumbs: ["Blog", "Categorias"] };
   if (path === "/admin/senha") return { title: "Alterar senha", crumbs: ["Conta", "Alterar senha"] };
-  return { title: "Painel Administrativo", crumbs: ["Dashboard"] };
+  return { title: "Visitas & Métricas do Site", crumbs: ["Painel", "Métricas"] };
 }
 
 const TopBar: React.FC<{ email?: string; onSignOut?: () => void; onToggleMenu?: () => void; menuOpen?: boolean }> = ({
@@ -402,7 +405,7 @@ export const AdminPage: React.FC<{ path: string }> = ({ path }) => {
   else if (path === "/admin/textos") content = <AdminPostList />;
   else if (path === "/admin/categorias") content = <AdminCategories />;
   else if (path === "/admin/senha") content = <PasswordPage recovering={recovering} onDone={() => setRecovering(false)} />;
-  else content = <Dashboard />;
+  else content = <AdminAnalytics />;
 
   return (
     <AdminLayout path={path} email={session.user.email} onSignOut={signOut}>

@@ -10,6 +10,7 @@ import { BlogSection } from "./components/blog/BlogSection";
 import { ClosingSection } from "./components/ClosingSection";
 import { usePathname, navigate } from "./lib/router";
 import { useSmoothScroll, scrollToSection } from "./lib/useSmoothScroll";
+import { trackPageView } from "./lib/tracker";
 
 // Páginas fora da home ficam em arquivos separados: o visitante da home não baixa o painel nem o leitor do blog.
 const AdminPage = lazy(() => import("./components/admin/AdminPage").then((m) => ({ default: m.AdminPage })));
@@ -73,6 +74,7 @@ export default function App() {
   useSmoothScroll();
 
   useEffect(() => {
+    trackPageView(path);
     if (path === "/links" || path.startsWith("/links/") || path === "/linktree" || path.startsWith("/linktree/")) {
       document.title = "Links Oficiais — Clique e Poesia | Um clique, uma poesia!";
     } else {
