@@ -14,6 +14,8 @@ import {
   Laptop,
   Clock,
   Compass,
+  MousePointerClick,
+  MessageCircle,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { AdminCard } from "./ui";
@@ -31,12 +33,22 @@ interface RecentVisit {
   created_at: string;
 }
 
+interface ButtonClickStat {
+  id: string;
+  label: string;
+  count: number;
+  percentage: number;
+  category: "whatsapp" | "link" | "social";
+}
+
 interface AnalyticsData {
   totalViews: number;
   uniqueVisitors: number;
   mobileCount: number;
   desktopCount: number;
   bioLinksCount: number;
+  totalClicks: number;
+  buttonClicks: ButtonClickStat[];
   pages: { path: string; count: number }[];
   referrers: { source: string; count: number }[];
   cities: { location: string; count: number }[];
@@ -45,6 +57,20 @@ interface AnalyticsData {
   dailyViews: { date: string; label: string; count: number }[];
   recentVisits: RecentVisit[];
 }
+
+const BUTTON_LABELS: Record<string, { label: string; category: "whatsapp" | "link" | "social" }> = {
+  btn_whatsapp: { label: "Planeje seu Ensaio (WhatsApp)", category: "whatsapp" },
+  icon_whatsapp: { label: "WhatsApp (Ícone Rodapé)", category: "whatsapp" },
+  btn_portfolio: { label: "Portfólio", category: "link" },
+  btn_blog: { label: "Blog", category: "link" },
+  btn_hospedagens: { label: "Hospedagens", category: "link" },
+  btn_retratos: { label: "Retratos", category: "link" },
+  btn_gastronomia: { label: "Gastronomia", category: "link" },
+  btn_share: { label: "Compartilhar Linktree", category: "social" },
+  icon_instagram: { label: "Instagram Oficial", category: "social" },
+  icon_pinterest: { label: "Pinterest Oficial", category: "social" },
+  icon_linkedin: { label: "LinkedIn Oficial", category: "social" },
+};
 
 export const AdminAnalytics: React.FC = () => {
   const [period, setPeriod] = useState<Period>("7d");
@@ -56,6 +82,8 @@ export const AdminAnalytics: React.FC = () => {
     mobileCount: 0,
     desktopCount: 0,
     bioLinksCount: 0,
+    totalClicks: 0,
+    buttonClicks: [],
     pages: [],
     referrers: [],
     cities: [],
@@ -82,15 +110,19 @@ export const AdminAnalytics: React.FC = () => {
         .select("id, path, referrer, device, device_model, browser, city, region, country, session_id, created_at");
 
       const now = new Date();
+      let startOfDayIso = "";
+      let past7Iso = "";
+      let past30Iso = "";
+
       if (selectedPeriod === "today") {
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-        query = query.gte("created_at", startOfDay);
+        startOfDayIso = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        query = query.gte("created_at", startOfDayIso);
       } else if (selectedPeriod === "7d") {
-        const past7 = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        query = query.gte("created_at", past7);
+        past7Iso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte("created_at", past7Iso);
       } else if (selectedPeriod === "30d") {
-        const past30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-        query = query.gte("created_at", past30);
+        past30Iso = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte("created_at", past30Iso);
       }
 
       const { data: rows, error: queryError } = await query.order("created_at", { ascending: false });
@@ -107,13 +139,72 @@ export const AdminAnalytics: React.FC = () => {
         return;
       }
 
-      if (!rows || rows.length === 0) {
+      // 2. Buscar cliques na tabela dedicada 'link_clicks'
+      let clicksQuery = supabase
+        .from("link_clicks")
+        .select("id, button_id, button_label, target_url, device, device_model, city, region, session_id, created_at");
+
+      if (selectedPeriod === "today") {
+        clicksQuery = clicksQuery.gte("created_at", startOfDayIso);
+      } else if (selectedPeriod === "7d") {
+        clicksQuery = clicksQuery.gte("created_at", past7Iso);
+      } else if (selectedPeriod === "30d") {
+        clicksQuery = clicksQuery.gte("created_at", past30Iso);
+      }
+
+      const { data: dedicatedClicks } = await clicksQuery.order("created_at", { ascending: false });
+
+      // Agrupamento de cliques em botões
+      const clickMap = new Map<string, number>();
+      let totalClicksCount = 0;
+
+      if (dedicatedClicks && dedicatedClicks.length > 0) {
+        for (const c of dedicatedClicks) {
+          totalClicksCount++;
+          const btnKey = c.button_id || "desconhecido";
+          clickMap.set(btnKey, (clickMap.get(btnKey) || 0) + 1);
+        }
+      }
+
+      // Separar page views normais e fallbacks de cliques
+      const validRows: typeof rows = [];
+
+      for (const row of rows || []) {
+        if (row.path && row.path.startsWith("click:")) {
+          // Se não usou a tabela dedicada, usa o fallback registrado em page_views
+          if (!dedicatedClicks || dedicatedClicks.length === 0) {
+            const btnKey = row.path.replace("click:", "");
+            totalClicksCount++;
+            clickMap.set(btnKey, (clickMap.get(btnKey) || 0) + 1);
+          }
+        } else {
+          validRows.push(row);
+        }
+      }
+
+      // Montar ranking de botões clicados
+      const buttonClicks: ButtonClickStat[] = Array.from(clickMap.entries())
+        .map(([id, count]) => {
+          const info = BUTTON_LABELS[id] || { label: id, category: "link" };
+          return {
+            id,
+            label: info.label,
+            count,
+            percentage: totalClicksCount > 0 ? Math.round((count / totalClicksCount) * 100) : 0,
+            category: info.category,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+
+      if (validRows.length === 0 && totalClicksCount === 0) {
         setData({
           totalViews: 0,
           uniqueVisitors: 0,
           mobileCount: 0,
           desktopCount: 0,
           bioLinksCount: 0,
+          totalClicks: 0,
+          buttonClicks: [],
           pages: [],
           referrers: [],
           cities: [],
@@ -137,7 +228,7 @@ export const AdminAnalytics: React.FC = () => {
       const browserMap = new Map<string, number>();
       const dateMap = new Map<string, number>();
 
-      for (const row of rows) {
+      for (const row of validRows) {
         if (row.session_id) uniqueSessions.add(row.session_id);
 
         if (row.device === "mobile" || row.device === "tablet") mobile++;
@@ -206,7 +297,7 @@ export const AdminAnalytics: React.FC = () => {
         });
 
       // Últimas 15 visitas em tempo real
-      const recentVisits: RecentVisit[] = rows.slice(0, 15).map((r) => ({
+      const recentVisits: RecentVisit[] = validRows.slice(0, 15).map((r) => ({
         id: r.id,
         path: r.path,
         city: r.city,
@@ -218,11 +309,13 @@ export const AdminAnalytics: React.FC = () => {
       }));
 
       setData({
-        totalViews: rows.length,
-        uniqueVisitors: uniqueSessions.size || rows.length,
+        totalViews: validRows.length,
+        uniqueVisitors: uniqueSessions.size || validRows.length,
         mobileCount: mobile,
         desktopCount: desktop,
         bioLinksCount: bioLinks,
+        totalClicks: totalClicksCount,
+        buttonClicks,
         pages,
         referrers,
         cities,
@@ -244,6 +337,7 @@ export const AdminAnalytics: React.FC = () => {
 
   const mobilePercent = data.totalViews > 0 ? Math.round((data.mobileCount / data.totalViews) * 100) : 0;
   const maxDayCount = Math.max(...data.dailyViews.map((d) => d.count), 1);
+  const conversionRate = data.bioLinksCount > 0 ? Math.round((data.totalClicks / data.bioLinksCount) * 100) : 0;
 
   const formatVisitTime = (isoString: string) => {
     try {
@@ -333,71 +427,178 @@ export const AdminAnalytics: React.FC = () => {
       )}
 
       {/* Cartões Principais (KPIs) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total de Visualizações */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Visualizações</span>
-            <div className="text-[26px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Visualizações</span>
+            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : data.totalViews.toLocaleString("pt-BR")}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
               <Eye size={11} /> Páginas abertas
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-[#384936]/10 text-[#384936] flex items-center justify-center">
-            <TrendingUp size={20} />
+          <div className="w-9 h-9 rounded-full bg-[#384936]/10 text-[#384936] flex items-center justify-center shrink-0">
+            <TrendingUp size={18} />
           </div>
         </AdminCard>
 
         {/* Visitantes Únicos */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Visitantes Únicos</span>
-            <div className="text-[26px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Visitantes Únicos</span>
+            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : data.uniqueVisitors.toLocaleString("pt-BR")}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
               <Users size={11} /> Pessoas diferentes
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-700 flex items-center justify-center">
-            <Users size={20} />
+          <div className="w-9 h-9 rounded-full bg-blue-500/10 text-blue-700 flex items-center justify-center shrink-0">
+            <Users size={18} />
           </div>
         </AdminCard>
 
         {/* % Celular vs Computador */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Acessos por Celular</span>
-            <div className="text-[26px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Acessos Celular</span>
+            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : `${mobilePercent}%`}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Smartphone size={11} /> {data.mobileCount} celular · {data.desktopCount} PC
+              <Smartphone size={11} /> {data.mobileCount} cel · {data.desktopCount} PC
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
-            <Smartphone size={20} />
+          <div className="w-9 h-9 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center shrink-0">
+            <Smartphone size={18} />
           </div>
         </AdminCard>
 
         {/* Link da Bio (/links) */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Link da Bio (/links)</span>
-            <div className="text-[26px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Link Bio (/links)</span>
+            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : data.bioLinksCount.toLocaleString("pt-BR")}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Share2 size={11} /> Instagram / Linktree
+              <Share2 size={11} /> Visitas na Bio
             </span>
           </div>
-          <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-700 flex items-center justify-center">
-            <Share2 size={20} />
+          <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0">
+            <Share2 size={18} />
+          </div>
+        </AdminCard>
+
+        {/* Total de Cliques nos Botões */}
+        <AdminCard className="p-4 flex items-center justify-between">
+          <div>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Cliques nos Botões</span>
+            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+              {loading ? "..." : data.totalClicks.toLocaleString("pt-BR")}
+            </div>
+            <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
+              <MousePointerClick size={11} /> {conversionRate}% taxa de conversão
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-purple-500/10 text-purple-700 flex items-center justify-center shrink-0">
+            <MousePointerClick size={18} />
           </div>
         </AdminCard>
       </div>
+
+      {/* ========================================================================= */}
+      {/* SEÇÃO ESPECIAL: CLIQUES NOS BOTÕES DO LINKTREE / BIO                      */}
+      {/* ========================================================================= */}
+      <AdminCard className="p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#171713]/10 pb-3">
+          <div>
+            <h3 className="text-[15px] font-medium text-[#171713] flex items-center gap-2">
+              <MousePointerClick size={17} className="text-[#384936]" />
+              <span>Cliques nos Botões do Linktree (Bio)</span>
+            </h3>
+            <p className="text-[12px] text-[#171713]/55 mt-0.5">
+              Métricas exatas de quantas pessoas clicaram em cada botão da sua página de links (/links)
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-[12px] bg-[#384936]/10 text-[#384936] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5">
+              <span>Total: {data.totalClicks} cliques</span>
+              {data.bioLinksCount > 0 && (
+                <span className="text-[#384936]/70">· {conversionRate}% de conversão</span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {data.buttonClicks.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <div className="w-12 h-12 rounded-full bg-[#171713]/5 text-[#171713]/40 flex items-center justify-center mx-auto">
+              <MousePointerClick size={22} />
+            </div>
+            <p className="text-[13.5px] font-medium text-[#171713]/70">Nenhum clique registrado ainda neste período.</p>
+            <p className="text-[12px] text-[#171713]/45 max-w-md mx-auto">
+              Assim que os visitantes acessarem o seu Linktree pelo Instagram e clicarem em Planeje seu Ensaio, Portfólio, Blog ou redes, os contadores aparecerão aqui automaticamente.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3 pt-1">
+            {data.buttonClicks.map((btn) => {
+              const isWhatsApp = btn.category === "whatsapp";
+              const isSocial = btn.category === "social";
+
+              const badgeColor = isWhatsApp
+                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                : isSocial
+                ? "bg-pink-100 text-pink-800 border-pink-200"
+                : "bg-blue-100 text-blue-800 border-blue-200";
+
+              const barColor = isWhatsApp
+                ? "bg-emerald-600"
+                : isSocial
+                ? "bg-pink-600"
+                : "bg-[#384936]";
+
+              return (
+                <div key={btn.id} className="p-3 rounded-lg bg-[#171713]/2 hover:bg-[#171713]/4 transition-colors space-y-1.5 border border-[#171713]/5">
+                  <div className="flex items-center justify-between text-[13px]">
+                    <div className="flex items-center gap-2 min-w-0 pr-3">
+                      {isWhatsApp ? (
+                        <MessageCircle size={15} className="text-emerald-600 shrink-0" />
+                      ) : (
+                        <MousePointerClick size={15} className="text-[#384936] shrink-0" />
+                      )}
+                      <span className="font-semibold text-[#171713] truncate">{btn.label}</span>
+                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border shrink-0 ${badgeColor}`}>
+                        {btn.category === "whatsapp" ? "Contato" : btn.category === "social" ? "Rede" : "Site"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-[13px] font-bold text-[#171713] font-mono">
+                        {btn.count.toLocaleString("pt-BR")} {btn.count === 1 ? "clique" : "cliques"}
+                      </span>
+                      <span className="text-[11.5px] font-medium text-[#171713]/50 w-11 text-right">
+                        ({btn.percentage}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-[#171713]/8 h-2 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                      style={{ width: `${Math.max(4, btn.percentage)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </AdminCard>
 
       {/* Gráfico de Acessos Recentes por Dia */}
       {data.dailyViews.length > 0 && (

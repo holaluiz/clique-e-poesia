@@ -212,3 +212,48 @@ export function trackPageView(path: string) {
     setTimeout(executeTrack, 800);
   }
 }
+
+/**
+ * Registra o clique em um botão específico (ex.: WhatsApp, Portfólio no Linktree)
+ */
+export function trackButtonClick(buttonId: string, buttonLabel: string, targetUrl?: string) {
+  if (typeof window === "undefined" || !supabase) return;
+  if (isAnalyticsIgnored()) return;
+
+  const executeClickTrack = async () => {
+    try {
+      const { deviceType, deviceModel } = getDeviceDetails();
+      const geo = await getCachedGeo();
+      const sessionId = getSessionId();
+
+      // 1. Tentar gravar na tabela dedicada link_clicks
+      const { error } = await supabase.from("link_clicks").insert({
+        button_id: buttonId,
+        button_label: buttonLabel,
+        target_url: targetUrl || null,
+        device: deviceType,
+        device_model: deviceModel,
+        city: geo.city || null,
+        region: geo.region || null,
+        session_id: sessionId,
+      });
+
+      // 2. Fallback de segurança para page_views caso a tabela link_clicks ainda não exista
+      if (error) {
+        await supabase.from("page_views").insert({
+          path: `click:${buttonId}`,
+          referrer: buttonLabel,
+          device: deviceType,
+          device_model: deviceModel,
+          city: geo.city || null,
+          region: geo.region || null,
+          session_id: sessionId,
+        });
+      }
+    } catch {
+      // Ignora silenciosamente
+    }
+  };
+
+  executeClickTrack();
+}

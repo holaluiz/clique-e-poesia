@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { navigate } from "../lib/router";
 import { scrollToSection } from "../lib/useSmoothScroll";
+import { trackButtonClick } from "../lib/tracker";
 
 // Ícone Pinterest
 const PinterestIcon: React.FC<{ size?: number; className?: string }> = ({
@@ -61,6 +62,7 @@ export const LinksPage: React.FC = () => {
   const [copiedToast, setCopiedToast] = useState(false);
 
   const handleShare = async () => {
+    trackButtonClick("btn_share", "Compartilhar Linktree");
     const shareData = {
       title: "Clique e Poesia — Links",
       text: "Fotografar e escrever com afeto. Confira os links oficiais da Clique e Poesia!",
@@ -84,8 +86,11 @@ export const LinksPage: React.FC = () => {
     }
   };
 
-  const handleInternalNav = (url: string, e: React.MouseEvent) => {
+  const handleInternalNav = (url: string, e: React.MouseEvent, buttonId?: string, buttonLabel?: string) => {
     e.preventDefault();
+    if (buttonId && buttonLabel) {
+      trackButtonClick(buttonId, buttonLabel, url);
+    }
     if (url.includes("#")) {
       const hash = url.slice(url.indexOf("#"));
       navigate(url);
@@ -188,7 +193,7 @@ export const LinksPage: React.FC = () => {
           {/* 1. PORTFOLIO */}
           <a
             href="/#portfolio"
-            onClick={(e) => handleInternalNav("/#portfolio", e)}
+            onClick={(e) => handleInternalNav("/#portfolio", e, "btn_portfolio", "Portfólio")}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             PORTFÓLIO
@@ -197,7 +202,7 @@ export const LinksPage: React.FC = () => {
           {/* 2. BLOG */}
           <a
             href="/blog"
-            onClick={(e) => handleInternalNav("/blog", e)}
+            onClick={(e) => handleInternalNav("/blog", e, "btn_blog", "Blog")}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             BLOG
@@ -208,6 +213,7 @@ export const LinksPage: React.FC = () => {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackButtonClick("btn_whatsapp", "Planeje seu Ensaio (WhatsApp)", WHATSAPP_URL)}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/65 hover:bg-white/85 active:bg-white/95 backdrop-blur-md text-[#122414] font-sans font-bold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.14)] hover:shadow-[0_6px_22px_rgba(37,211,102,0.35)] hover:scale-[1.02] text-center flex items-center justify-center gap-2 border border-white/60 touch-manipulation cursor-pointer"
           >
             <WhatsAppIcon size={18} className="text-[#1CAA55] shrink-0" />
@@ -217,7 +223,7 @@ export const LinksPage: React.FC = () => {
           {/* 4. HOSPEDAGENS & EXPERIÊNCIAS */}
           <a
             href="/#a-clique"
-            onClick={(e) => handleInternalNav("/#a-clique", e)}
+            onClick={(e) => handleInternalNav("/#a-clique", e, "btn_hospedagens", "Hospedagens")}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             HOSPEDAGENS
@@ -226,7 +232,7 @@ export const LinksPage: React.FC = () => {
           {/* 5. RETRATOS */}
           <a
             href="/#pessoas"
-            onClick={(e) => handleInternalNav("/#pessoas", e)}
+            onClick={(e) => handleInternalNav("/#pessoas", e, "btn_retratos", "Retratos")}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             RETRATOS
@@ -235,7 +241,7 @@ export const LinksPage: React.FC = () => {
           {/* 6. GASTRONOMIA */}
           <a
             href="/#gastronomia"
-            onClick={(e) => handleInternalNav("/#gastronomia", e)}
+            onClick={(e) => handleInternalNav("/#gastronomia", e, "btn_gastronomia", "Gastronomia")}
             className="w-full py-3.5 sm:py-4 px-6 rounded-full bg-white/50 hover:bg-white/75 active:bg-white/85 backdrop-blur-md text-[#1E1E18] font-sans font-semibold text-[13px] sm:text-[14px] tracking-[0.16em] uppercase transition-all duration-200 shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-[0_6px_22px_rgba(0,0,0,0.22)] hover:scale-[1.015] text-center block touch-manipulation cursor-pointer"
           >
             GASTRONOMIA
@@ -248,6 +254,7 @@ export const LinksPage: React.FC = () => {
             href="https://www.instagram.com/cliqueepoesia/"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackButtonClick("icon_instagram", "Instagram Oficial")}
             aria-label="Instagram da Clique e Poesia"
             className="w-10 h-10 rounded-full bg-white/35 hover:bg-white/60 text-[#1E1E18] flex items-center justify-center transition-all duration-200 shadow-sm hover:scale-105"
           >
@@ -258,6 +265,7 @@ export const LinksPage: React.FC = () => {
             href="https://pin.it/2PrRZniVb"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackButtonClick("icon_pinterest", "Pinterest Oficial")}
             aria-label="Pinterest da Clique e Poesia"
             className="w-10 h-10 rounded-full bg-white/35 hover:bg-white/60 text-[#1E1E18] flex items-center justify-center transition-all duration-200 shadow-sm hover:scale-105"
           >
@@ -268,6 +276,7 @@ export const LinksPage: React.FC = () => {
             href="https://www.linkedin.com/company/clique-poesia/about/?viewAsMember=true"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackButtonClick("icon_linkedin", "LinkedIn Oficial")}
             aria-label="LinkedIn da Clique e Poesia"
             className="w-10 h-10 rounded-full bg-white/35 hover:bg-white/60 text-[#1E1E18] flex items-center justify-center transition-all duration-200 shadow-sm hover:scale-105"
           >
@@ -278,6 +287,7 @@ export const LinksPage: React.FC = () => {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackButtonClick("icon_whatsapp", "WhatsApp Rodapé", WHATSAPP_URL)}
             aria-label="WhatsApp da Clique e Poesia"
             className="w-10 h-10 rounded-full bg-white/35 hover:bg-white/60 text-[#1E1E18] flex items-center justify-center transition-all duration-200 shadow-sm hover:scale-105"
           >
