@@ -6,6 +6,56 @@ interface GeoInfo {
   country?: string;
 }
 
+const IGNORED_EMAILS = [
+  "marcosgabriel.saga@gmail.com",
+  "jordananadine@gmail.com",
+];
+
+/**
+ * Verifica se o usuário atual é Marcos ou Jordana Nadine, ou se este navegador
+ * foi marcado para não registrar métricas próprias.
+ */
+export function isAnalyticsIgnored(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    // 1. Flag salva no navegador
+    if (localStorage.getItem("cp_ignore_analytics") === "true") {
+      return true;
+    }
+
+    // 2. Checagem de sessão de login no localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes("auth-token") || key.startsWith("sb-"))) {
+        const val = localStorage.getItem(key);
+        if (val) {
+          const lower = val.toLowerCase();
+          for (const email of IGNORED_EMAILS) {
+            if (lower.includes(email.toLowerCase())) {
+              localStorage.setItem("cp_ignore_analytics", "true");
+              return true;
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    // Fallback silencioso
+  }
+  return false;
+}
+
+export function setIgnoreAnalytics(ignore: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (ignore) {
+      localStorage.setItem("cp_ignore_analytics", "true");
+    } else {
+      localStorage.removeItem("cp_ignore_analytics");
+    }
+  } catch {}
+}
+
 function getDeviceDetails(): { deviceType: "mobile" | "tablet" | "desktop"; deviceModel: string; browser: string } {
   if (typeof window === "undefined") {
     return { deviceType: "desktop", deviceModel: "Desktop", browser: "Navegador" };
@@ -121,6 +171,8 @@ export function trackPageView(path: string) {
   if (typeof window === "undefined" || !supabase) return;
   // Não rastrear o próprio administrador navegando no painel
   if (path.startsWith("/admin")) return;
+  // Não rastrear acessos do Marcos ou da Jordana Nadine
+  if (isAnalyticsIgnored()) return;
   // Evitar disparos duplicados consecutivos para a mesma página
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;

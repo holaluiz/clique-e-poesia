@@ -312,6 +312,16 @@ export const AdminAnalytics: React.FC = () => {
         </button>
       </div>
 
+      {/* Aviso de exclusão dos acessos dos donos */}
+      <div className="bg-[#384936]/8 border border-[#384936]/20 rounded-lg px-4 py-2.5 flex items-center justify-between text-[12.5px] text-[#20201B]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+          <span>
+            <strong>Filtro de Administrador Ativo:</strong> Seus acessos (<em>marcosgabriel.saga@gmail.com</em> e <em>jordananadine@gmail.com</em>) estão sendo ignorados para garantir dados 100% reais de visitantes.
+          </span>
+        </div>
+      </div>
+
       {error && (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-4 text-[13px] flex items-start gap-3">
           <AlertCircle size={18} className="shrink-0 text-amber-600 mt-0.5" />

@@ -350,6 +350,12 @@ export const AdminPage: React.FC<{ path: string }> = ({ path }) => {
 
   const userId = session?.user.id;
   useEffect(() => {
+    if (session?.user?.email) {
+      localStorage.setItem("cp_ignore_analytics", "true");
+    }
+  }, [session]);
+
+  useEffect(() => {
     if (!userId) {
       setAdmin(undefined);
       return;
