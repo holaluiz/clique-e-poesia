@@ -10,11 +10,26 @@ import {
   Calendar,
   AlertCircle,
   ExternalLink,
+  MapPin,
+  Laptop,
+  Clock,
+  Compass,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { AdminCard } from "./ui";
 
 type Period = "today" | "7d" | "30d" | "all";
+
+interface RecentVisit {
+  id: string;
+  path: string;
+  city?: string;
+  region?: string;
+  device_model?: string;
+  browser?: string;
+  referrer?: string;
+  created_at: string;
+}
 
 interface AnalyticsData {
   totalViews: number;
@@ -24,7 +39,11 @@ interface AnalyticsData {
   bioLinksCount: number;
   pages: { path: string; count: number }[];
   referrers: { source: string; count: number }[];
+  cities: { location: string; count: number }[];
+  devices: { name: string; count: number }[];
+  browsers: { name: string; count: number }[];
   dailyViews: { date: string; label: string; count: number }[];
+  recentVisits: RecentVisit[];
 }
 
 export const AdminAnalytics: React.FC = () => {
@@ -39,7 +58,11 @@ export const AdminAnalytics: React.FC = () => {
     bioLinksCount: 0,
     pages: [],
     referrers: [],
+    cities: [],
+    devices: [],
+    browsers: [],
     dailyViews: [],
+    recentVisits: [],
   });
   const [, startTransition] = useTransition();
 
@@ -54,7 +77,9 @@ export const AdminAnalytics: React.FC = () => {
     setError(null);
 
     try {
-      let query = supabase.from("page_views").select("path, referrer, device, session_id, created_at");
+      let query = supabase
+        .from("page_views")
+        .select("id, path, referrer, device, device_model, browser, city, region, country, session_id, created_at");
 
       const now = new Date();
       if (selectedPeriod === "today") {
@@ -68,11 +93,13 @@ export const AdminAnalytics: React.FC = () => {
         query = query.gte("created_at", past30);
       }
 
-      const { data: rows, error: queryError } = await query.order("created_at", { ascending: true });
+      const { data: rows, error: queryError } = await query.order("created_at", { ascending: false });
 
       if (queryError) {
-        if (queryError.message.includes("relation \"public.page_views\" does not exist") || queryError.code === "42P01") {
-          setError("A tabela 'page_views' ainda não foi criada no Supabase. Execute o script SQL no painel do Supabase para ativar o rastreamento.");
+        if (queryError.message.includes("does not exist") || queryError.code === "42P01") {
+          setError(
+            "A tabela 'page_views' ainda não foi criada no Supabase. Execute o script SQL no painel do Supabase para ativar o rastreamento."
+          );
         } else {
           setError("Erro ao carregar métricas: " + queryError.message);
         }
@@ -89,19 +116,25 @@ export const AdminAnalytics: React.FC = () => {
           bioLinksCount: 0,
           pages: [],
           referrers: [],
+          cities: [],
+          devices: [],
+          browsers: [],
           dailyViews: [],
+          recentVisits: [],
         });
         setLoading(false);
         return;
       }
 
-      // 1. Totais e visitantes únicos
       const uniqueSessions = new Set<string>();
       let mobile = 0;
       let desktop = 0;
       let bioLinks = 0;
       const pageMap = new Map<string, number>();
       const refMap = new Map<string, number>();
+      const cityMap = new Map<string, number>();
+      const deviceMap = new Map<string, number>();
+      const browserMap = new Map<string, number>();
       const dateMap = new Map<string, number>();
 
       for (const row of rows) {
@@ -116,6 +149,22 @@ export const AdminAnalytics: React.FC = () => {
 
         const ref = row.referrer || "Direto";
         refMap.set(ref, (refMap.get(ref) || 0) + 1);
+
+        // Agrupamento de cidades e regiões
+        const loc = row.city
+          ? row.region
+            ? `${row.city}, ${row.region}`
+            : row.city
+          : "Localização em processamento";
+        cityMap.set(loc, (cityMap.get(loc) || 0) + 1);
+
+        // Agrupamento de modelos de aparelhos
+        const dev = row.device_model || (row.device === "mobile" ? "Celular (Android/iOS)" : "Computador (PC/Mac)");
+        deviceMap.set(dev, (deviceMap.get(dev) || 0) + 1);
+
+        // Agrupamento de navegadores / apps
+        const nav = row.browser || "Navegador Web";
+        browserMap.set(nav, (browserMap.get(nav) || 0) + 1);
 
         if (row.created_at) {
           const d = new Date(row.created_at);
@@ -132,14 +181,41 @@ export const AdminAnalytics: React.FC = () => {
         .map(([source, count]) => ({ source, count }))
         .sort((a, b) => b.count - a.count);
 
-      const dailyViews = Array.from(dateMap.entries()).map(([date, count]) => {
-        const [, m, day] = date.split("-");
-        return {
-          date,
-          label: `${day}/${m}`,
-          count,
-        };
-      });
+      const cities = Array.from(cityMap.entries())
+        .map(([location, count]) => ({ location, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const devices = Array.from(deviceMap.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      const browsers = Array.from(browserMap.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      // Ordenar datas cronologicamente para o gráfico
+      const dailyViews = Array.from(dateMap.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([date, count]) => {
+          const [, m, day] = date.split("-");
+          return {
+            date,
+            label: `${day}/${m}`,
+            count,
+          };
+        });
+
+      // Últimas 15 visitas em tempo real
+      const recentVisits: RecentVisit[] = rows.slice(0, 15).map((r) => ({
+        id: r.id,
+        path: r.path,
+        city: r.city,
+        region: r.region,
+        device_model: r.device_model,
+        browser: r.browser,
+        referrer: r.referrer,
+        created_at: r.created_at,
+      }));
 
       setData({
         totalViews: rows.length,
@@ -149,7 +225,11 @@ export const AdminAnalytics: React.FC = () => {
         bioLinksCount: bioLinks,
         pages,
         referrers,
+        cities,
+        devices,
+        browsers,
         dailyViews,
+        recentVisits,
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido ao buscar dados.");
@@ -165,9 +245,18 @@ export const AdminAnalytics: React.FC = () => {
   const mobilePercent = data.totalViews > 0 ? Math.round((data.mobileCount / data.totalViews) * 100) : 0;
   const maxDayCount = Math.max(...data.dailyViews.map((d) => d.count), 1);
 
+  const formatVisitTime = (isoString: string) => {
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Barra de Ações & Filtros */}
+      {/* Barra de Filtros */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-lg border border-[#171713]/10">
         <div className="flex items-center gap-2">
           <Calendar size={16} className="text-[#384936]" />
@@ -233,9 +322,9 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       )}
 
-      {/* Cartões de Indicadores Chave (KPIs) */}
+      {/* Cartões Principais (KPIs) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total de Visitas */}
+        {/* Total de Visualizações */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
             <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Visualizações</span>
@@ -267,7 +356,7 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </AdminCard>
 
-        {/* % Dispositivos Móveis */}
+        {/* % Celular vs Computador */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
             <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Acessos por Celular</span>
@@ -275,7 +364,7 @@ export const AdminAnalytics: React.FC = () => {
               {loading ? "..." : `${mobilePercent}%`}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Smartphone size={11} /> {data.mobileCount} celular · {data.desktopCount} desktop
+              <Smartphone size={11} /> {data.mobileCount} celular · {data.desktopCount} PC
             </span>
           </div>
           <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-700 flex items-center justify-center">
@@ -283,7 +372,7 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </AdminCard>
 
-        {/* Visitas na Bio (/links) */}
+        {/* Link da Bio (/links) */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
             <span className="text-[11.5px] font-medium uppercase tracking-wider text-[#171713]/50">Link da Bio (/links)</span>
@@ -300,7 +389,7 @@ export const AdminAnalytics: React.FC = () => {
         </AdminCard>
       </div>
 
-      {/* Gráfico Visual de Acessos Recentes por Dia */}
+      {/* Gráfico de Acessos Recentes por Dia */}
       {data.dailyViews.length > 0 && (
         <AdminCard className="p-5 space-y-4">
           <div className="flex items-center justify-between">
@@ -333,13 +422,89 @@ export const AdminAnalytics: React.FC = () => {
         </AdminCard>
       )}
 
-      {/* Tabelas de Detalhamento: Páginas & Origens */}
+      {/* Localização & Aparelhos (As novas seções solicitadas) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Páginas mais Acessadas */}
+        {/* Cidades & Regiões */}
         <AdminCard className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
             <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
-              <Globe size={15} className="text-[#384936]" /> Páginas Mais Vistas
+              <MapPin size={15} className="text-[#384936]" /> Cidades & Localização
+            </h3>
+            <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
+          </div>
+
+          {data.cities.length === 0 ? (
+            <p className="text-[13px] text-[#171713]/50 py-4 text-center">Nenhuma localização registrada ainda.</p>
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              {data.cities.slice(0, 7).map((c) => {
+                const percent = data.totalViews > 0 ? Math.round((c.count / data.totalViews) * 100) : 0;
+                return (
+                  <div key={c.location} className="space-y-1">
+                    <div className="flex items-center justify-between text-[12.5px]">
+                      <span className="font-medium text-[#171713]/85 truncate max-w-[240px] sm:max-w-xs flex items-center gap-1.5">
+                        <Compass size={13} className="text-[#384936]/60 shrink-0" />
+                        {c.location}
+                      </span>
+                      <span className="text-[#171713]/60 font-mono text-[12px]">
+                        {c.count} <span className="text-[#171713]/40">({percent}%)</span>
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-[#384936] h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </AdminCard>
+
+        {/* Modelo do Celular & Aparelhos */}
+        <AdminCard className="p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
+            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+              <Smartphone size={15} className="text-[#384936]" /> Modelos de Aparelho & Dispositivos
+            </h3>
+            <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
+          </div>
+
+          {data.devices.length === 0 ? (
+            <p className="text-[13px] text-[#171713]/50 py-4 text-center">Nenhum aparelho identificado ainda.</p>
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              {data.devices.slice(0, 7).map((d) => {
+                const percent = data.totalViews > 0 ? Math.round((d.count / data.totalViews) * 100) : 0;
+                const isMobile = d.name.toLowerCase().includes("iphone") || d.name.toLowerCase().includes("samsung") || d.name.toLowerCase().includes("motorola") || d.name.toLowerCase().includes("android");
+                return (
+                  <div key={d.name} className="space-y-1">
+                    <div className="flex items-center justify-between text-[12.5px]">
+                      <span className="font-medium text-[#171713]/85 truncate max-w-[240px] sm:max-w-xs flex items-center gap-1.5">
+                        {isMobile ? <Smartphone size={13} className="text-emerald-700/70 shrink-0" /> : <Laptop size={13} className="text-blue-700/70 shrink-0" />}
+                        {d.name}
+                      </span>
+                      <span className="text-[#171713]/60 font-mono text-[12px]">
+                        {d.count} <span className="text-[#171713]/40">({percent}%)</span>
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-emerald-700/70 h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </AdminCard>
+      </div>
+
+      {/* Páginas Mais Vistas & Origens de Tráfego */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Páginas Mais Vistas */}
+        <AdminCard className="p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
+            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+              <Globe size={15} className="text-[#384936]" /> Páginas Mais Acessadas
             </h3>
             <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
           </div>
@@ -369,11 +534,11 @@ export const AdminAnalytics: React.FC = () => {
           )}
         </AdminCard>
 
-        {/* Origem do Tráfego (Referrers) */}
+        {/* Origem do Tráfego & Aplicativos */}
         <AdminCard className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
             <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
-              <ExternalLink size={15} className="text-[#384936]" /> Origem do Tráfego
+              <ExternalLink size={15} className="text-[#384936]" /> Origem do Tráfego & Apps
             </h3>
             <span className="text-[11.5px] text-[#171713]/50">Visitantes</span>
           </div>
@@ -393,7 +558,7 @@ export const AdminAnalytics: React.FC = () => {
                       </span>
                     </div>
                     <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-emerald-700/70 h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
+                      <div className="bg-[#384936] h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
                     </div>
                   </div>
                 );
@@ -402,6 +567,72 @@ export const AdminAnalytics: React.FC = () => {
           )}
         </AdminCard>
       </div>
+
+      {/* Feed em Tempo Real: Últimas Visitas */}
+      {data.recentVisits.length > 0 && (
+        <AdminCard className="p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
+            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+              <Clock size={15} className="text-[#384936]" /> Últimas Visitas em Tempo Real
+            </h3>
+            <span className="text-[11.5px] text-[#171713]/50">Últimos registros</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#171713]/8 text-[#171713]/50 font-medium">
+                  <th className="py-2 pr-3">Horário</th>
+                  <th className="py-2 px-3">Página</th>
+                  <th className="py-2 px-3">Cidade / Região</th>
+                  <th className="py-2 px-3">Aparelho / Modelo</th>
+                  <th className="py-2 px-3">Navegador / App</th>
+                  <th className="py-2 pl-3">Origem</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#171713]/5">
+                {data.recentVisits.map((v) => (
+                  <tr key={v.id} className="hover:bg-[#171713]/2 transition-colors">
+                    <td className="py-2.5 pr-3 font-mono text-[11.5px] text-[#171713]/60 whitespace-nowrap">
+                      {formatVisitTime(v.created_at)}
+                    </td>
+                    <td className="py-2.5 px-3 font-medium text-[#171713] whitespace-nowrap">
+                      {v.path === "/" ? "Home" : v.path}
+                    </td>
+                    <td className="py-2.5 px-3 text-[#171713]/80 whitespace-nowrap">
+                      {v.city ? (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin size={11} className="text-[#384936]" />
+                          {v.city}{v.region ? ` - ${v.region}` : ""}
+                        </span>
+                      ) : (
+                        <span className="text-[#171713]/40">Não identificada</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3 text-[#171713]/80 whitespace-nowrap">
+                      {v.device_model || "Desconhecido"}
+                    </td>
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                        v.browser?.includes("Instagram")
+                          ? "bg-pink-100 text-pink-800"
+                          : v.browser?.includes("WhatsApp")
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-[#171713]/5 text-[#171713]/70"
+                      }`}>
+                        {v.browser || "Navegador"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pl-3 text-[#171713]/60 whitespace-nowrap">
+                      {v.referrer || "Direto"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </AdminCard>
+      )}
     </div>
   );
 };

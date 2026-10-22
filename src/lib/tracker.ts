@@ -1,11 +1,51 @@
 import { supabase } from "./supabase";
 
-function getDeviceType(): "mobile" | "tablet" | "desktop" {
-  if (typeof window === "undefined") return "desktop";
+interface GeoInfo {
+  city?: string;
+  region?: string;
+  country?: string;
+}
+
+function getDeviceDetails(): { deviceType: "mobile" | "tablet" | "desktop"; deviceModel: string; browser: string } {
+  if (typeof window === "undefined") {
+    return { deviceType: "desktop", deviceModel: "Desktop", browser: "Navegador" };
+  }
+
   const ua = navigator.userAgent;
-  if (/mobile/i.test(ua) || window.innerWidth < 768) return "mobile";
-  if (/tablet|ipad/i.test(ua) || (window.innerWidth >= 768 && window.innerWidth < 1024)) return "tablet";
-  return "desktop";
+  let deviceType: "mobile" | "tablet" | "desktop" = "desktop";
+  if (/mobile/i.test(ua) || window.innerWidth < 768) deviceType = "mobile";
+  else if (/tablet|ipad/i.test(ua) || (window.innerWidth >= 768 && window.innerWidth < 1024)) deviceType = "tablet";
+
+  // Identificação do Modelo / Plataforma
+  let deviceModel = "Desconhecido";
+  if (/iPhone/i.test(ua)) deviceModel = "iPhone (Apple)";
+  else if (/iPad/i.test(ua)) deviceModel = "iPad (Apple)";
+  else if (/Android/i.test(ua)) {
+    const match = ua.match(/Android[^;]+; ([^)]+)\)/);
+    if (match && match[1]) {
+      const rawModel = match[1].split("Build")[0].trim();
+      if (/SM-[A-Z0-9]+/i.test(rawModel)) deviceModel = `Samsung (${rawModel})`;
+      else if (/moto/i.test(rawModel)) deviceModel = `Motorola (${rawModel})`;
+      else if (/Redmi|POCO|Xiaomi/i.test(rawModel)) deviceModel = `Xiaomi (${rawModel})`;
+      else deviceModel = rawModel.slice(0, 30);
+    } else {
+      deviceModel = "Android";
+    }
+  } else if (/Windows NT/i.test(ua)) deviceModel = "Windows PC";
+  else if (/Macintosh/i.test(ua)) deviceModel = "Mac / Apple";
+  else if (/Linux/i.test(ua)) deviceModel = "Linux PC";
+
+  // Identificação do Navegador ou Aplicativo de Origem
+  let browser = "Navegador Web";
+  if (/Instagram/i.test(ua)) browser = "Instagram App";
+  else if (/WhatsApp/i.test(ua)) browser = "WhatsApp App";
+  else if (/FBAN|FBAV/i.test(ua)) browser = "Facebook App";
+  else if (/Edg/i.test(ua)) browser = "Microsoft Edge";
+  else if (/Chrome/i.test(ua)) browser = "Google Chrome";
+  else if (/Safari/i.test(ua)) browser = "Apple Safari";
+  else if (/Firefox/i.test(ua)) browser = "Mozilla Firefox";
+
+  return { deviceType, deviceModel, browser };
 }
 
 function getCleanReferrer(): string {
@@ -41,6 +81,37 @@ function getSessionId(): string {
   }
 }
 
+async function getCachedGeo(): Promise<GeoInfo> {
+  if (typeof window === "undefined") return {};
+  try {
+    const cached = sessionStorage.getItem("cp_analytics_geo");
+    if (cached) return JSON.parse(cached);
+
+    // Consulta assíncrona leve com timeout de segurança de 2 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+    const res = await fetch("https://ipwho.is/", { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success) {
+        const geo: GeoInfo = {
+          city: data.city || undefined,
+          region: data.region || undefined,
+          country: data.country || undefined,
+        };
+        sessionStorage.setItem("cp_analytics_geo", JSON.stringify(geo));
+        return geo;
+      }
+    }
+  } catch {
+    // Falhas de rede ou bloqueadores de rastreio não interrompem a execução
+  }
+  return {};
+}
+
 let lastTrackedPath = "";
 
 /**
@@ -54,18 +125,24 @@ export function trackPageView(path: string) {
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
 
-  const executeTrack = () => {
+  const executeTrack = async () => {
     try {
       const referrer = getCleanReferrer();
-      // Não registrar cliques internos entre páginas do próprio site como novo referrer externo
       const finalReferrer = referrer === "Interno" ? "Direto" : referrer;
+      const { deviceType, deviceModel, browser } = getDeviceDetails();
+      const geo = await getCachedGeo();
 
       supabase
         .from("page_views")
         .insert({
           path,
           referrer: finalReferrer,
-          device: getDeviceType(),
+          device: deviceType,
+          device_model: deviceModel,
+          browser,
+          city: geo.city || null,
+          region: geo.region || null,
+          country: geo.country || null,
           session_id: getSessionId(),
         })
         .then(() => {})
@@ -75,10 +152,11 @@ export function trackPageView(path: string) {
     }
   };
 
-  // Dá prioridade total para o carregamento do site: aguarda o navegador ficar ocioso
   if ("requestIdleCallback" in window) {
-    (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(executeTrack);
+    (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(() => {
+      executeTrack();
+    });
   } else {
-    setTimeout(executeTrack, 1000);
+    setTimeout(executeTrack, 800);
   }
 }
