@@ -16,6 +16,7 @@ import {
   Compass,
   MousePointerClick,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { AdminCard } from "./ui";
@@ -348,6 +349,25 @@ export const AdminAnalytics: React.FC = () => {
     }
   };
 
+  const handleResetMetrics = async () => {
+    if (!supabase) return;
+    const ok = window.confirm(
+      "Deseja realmente zerar todo o histórico de acessos e cliques no banco de dados para recomeçar o rastreamento do zero?"
+    );
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      await supabase.from("page_views").delete().gte("created_at", "2000-01-01");
+      await supabase.from("link_clicks").delete().gte("created_at", "2000-01-01");
+      await fetchAnalytics(period);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Barra de Filtros */}
@@ -395,15 +415,28 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => fetchAnalytics(period)}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12.5px] font-medium bg-[#171713]/5 hover:bg-[#171713]/10 text-[#171713]/75 transition-colors cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin text-[#384936]" : ""} />
-          <span>Atualizar</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={handleResetMetrics}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-red-700 bg-red-50 hover:bg-red-100/80 border border-red-200/80 transition-colors cursor-pointer"
+            title="Limpar todo o histórico de acessos e cliques"
+          >
+            <Trash2 size={13} />
+            <span>Zerar Histórico</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fetchAnalytics(period)}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium bg-[#171713]/5 hover:bg-[#171713]/10 text-[#171713]/75 transition-colors cursor-pointer"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin text-[#384936]" : ""} />
+            <span>Atualizar</span>
+          </button>
+        </div>
       </div>
 
       {/* Aviso de exclusão dos acessos dos donos */}
