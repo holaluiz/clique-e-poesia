@@ -8,6 +8,7 @@ import { GastronomiaSection } from "./components/GastronomiaSection";
 import { PortfolioGallerySection } from "./components/PortfolioGallerySection";
 import { BlogSection } from "./components/blog/BlogSection";
 import { ClosingSection } from "./components/ClosingSection";
+import { MinimalScrollbar } from "./components/MinimalScrollbar";
 import { usePathname, navigate } from "./lib/router";
 import { useSmoothScroll, scrollToSection } from "./lib/useSmoothScroll";
 import { trackPageView } from "./lib/tracker";
@@ -39,6 +40,9 @@ function HomePage() {
     <div className="bg-[#F2EDE3] min-h-screen text-[#20201B] selection:bg-[#3F503F] selection:text-[#F2EDE3] font-sans antialiased">
       {/* O menu fixo aparece após a hero e sua sequência de apresentação. */}
       <StickyNavbar />
+
+      {/* Barra de rolagem personalizada com camera arrastavel */}
+      <MinimalScrollbar />
 
       <main className="w-full flex flex-col">
         {/* Hero e narrativa sincronizada à rolagem, sobre a mesma fotografia. */}
