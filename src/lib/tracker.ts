@@ -12,18 +12,104 @@ const IGNORED_EMAILS = [
 ];
 
 /**
- * Verifica se o usuário atual é Marcos ou Jordana Nadine, ou se este navegador
- * foi marcado para não registrar métricas próprias.
+ * Detecta se a requisição provém de um ambiente automatizado, crawler,
+ * bot de pré-renderização de deploy (Vercel/Google) ou assistente/linter.
+ */
+function isAutomatedOrBot(): boolean {
+  if (typeof window === "undefined") return true;
+
+  // 1. Webdriver / Automação (Puppeteer, Selenium, Playwright, Chrome Headless)
+  if (navigator.webdriver) return true;
+
+  // 2. Flags globais de headless / automação no window
+  const win = window as unknown as Record<string, unknown>;
+  if (
+    win.__nightmare ||
+    win._phantom ||
+    win.callPhantom ||
+    win.__selenium_unwrapped ||
+    win.__webdriver_evaluate ||
+    win.__driver_evaluate
+  ) {
+    return true;
+  }
+
+  // 3. User-Agent de bots, crawlers, linters e scanners de deploy (Vercel, Google, Lighthouse)
+  const ua = (navigator.userAgent || "").toLowerCase();
+  const botKeywords = [
+    "headless",
+    "bot",
+    "crawl",
+    "spider",
+    "slurp",
+    "googlebot",
+    "bingbot",
+    "lighthouse",
+    "ptst",
+    "pingdom",
+    "uptime",
+    "screenshot",
+    "prerender",
+    "vercel",
+    "github",
+    "preview",
+    "phantom",
+    "selenium",
+    "puppeteer",
+    "antigravity",
+  ];
+
+  if (botKeywords.some((keyword) => ua.includes(keyword))) {
+    return true;
+  }
+
+  // 4. Linux Desktop sem touch executando Chrome (típico dos runners de CI/CD / Vercel em San Jose)
+  if (/linux/i.test(ua) && !/android/i.test(ua) && !("ontouchstart" in window)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Verifica se o usuário atual é Marcos, Jordana Nadine, ambiente de desenvolvimento
+ * ou robôs/assistentes automatizados.
  */
 export function isAnalyticsIgnored(): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") return true;
+
   try {
-    // 1. Flag salva no navegador
+    // 1. Ambiente de desenvolvimento local e preview (localhost, 127.0.0.1, Vite DEV)
+    if (
+      import.meta.env.DEV ||
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".local") ||
+      (window.location.port !== "" && window.location.port !== "80" && window.location.port !== "443")
+    ) {
+      return true;
+    }
+
+    // 2. Bots, rastreadores automatizados de deploy e assistentes/crawlers
+    if (isAutomatedOrBot()) {
+      return true;
+    }
+
+    // 3. Flag de exclusão salva no navegador
     if (localStorage.getItem("cp_ignore_analytics") === "true") {
       return true;
     }
 
-    // 2. Checagem de sessão de login no localStorage
+    // 4. Parâmetro de URL (ex: ?ignore_analytics=true ou ?preview=1)
+    if (
+      window.location.search.includes("ignore_analytics") ||
+      window.location.search.includes("preview=true")
+    ) {
+      localStorage.setItem("cp_ignore_analytics", "true");
+      return true;
+    }
+
+    // 5. Checagem de sessão de login no localStorage para Marcos ou Jordana
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && (key.includes("auth-token") || key.startsWith("sb-"))) {
@@ -147,6 +233,15 @@ async function getCachedGeo(): Promise<GeoInfo> {
     if (res.ok) {
       const data = await res.json();
       if (data && data.success) {
+        // Se a conexão vier de datacenters de nuvem (Google, AWS, Vercel, Microsoft, etc.)
+        const org = (data.connection?.org || "").toLowerCase();
+        const isp = (data.connection?.isp || "").toLowerCase();
+        const datacenterProviders = ["google", "amazon", "microsoft", "vercel", "digitalocean", "cloudflare", "hetzner", "ovh", "linode"];
+        if (datacenterProviders.some((p) => org.includes(p) || isp.includes(p))) {
+          localStorage.setItem("cp_ignore_analytics", "true");
+          return {};
+        }
+
         const geo: GeoInfo = {
           city: data.city || undefined,
           region: data.region || undefined,
@@ -171,7 +266,7 @@ export function trackPageView(path: string) {
   if (typeof window === "undefined" || !supabase) return;
   // Não rastrear o próprio administrador navegando no painel
   if (path.startsWith("/admin")) return;
-  // Não rastrear acessos do Marcos ou da Jordana Nadine
+  // Não rastrear acessos do Marcos, Jordana Nadine, assistentes ou bots
   if (isAnalyticsIgnored()) return;
   // Evitar disparos duplicados consecutivos para a mesma página
   if (path === lastTrackedPath) return;
@@ -183,6 +278,9 @@ export function trackPageView(path: string) {
       const finalReferrer = referrer === "Interno" ? "Direto" : referrer;
       const { deviceType, deviceModel, browser } = getDeviceDetails();
       const geo = await getCachedGeo();
+
+      // Se durante a busca do IP detectou que era datacenter/bot, aborta
+      if (isAnalyticsIgnored()) return;
 
       supabase
         .from("page_views")
@@ -225,6 +323,8 @@ export function trackButtonClick(buttonId: string, buttonLabel: string, targetUr
       const { deviceType, deviceModel } = getDeviceDetails();
       const geo = await getCachedGeo();
       const sessionId = getSessionId();
+
+      if (isAnalyticsIgnored()) return;
 
       // 1. Tentar gravar na tabela dedicada link_clicks
       const { error } = await supabase.from("link_clicks").insert({

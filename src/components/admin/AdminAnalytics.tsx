@@ -159,8 +159,15 @@ export const AdminAnalytics: React.FC = () => {
       const clickMap = new Map<string, number>();
       let totalClicksCount = 0;
 
+      const isBotOrDev = (r: { city?: string | null; country?: string | null; device_model?: string | null }) => {
+        if (r.city === "San Jose" && r.device_model === "Linux PC") return true;
+        if (r.country === "United States" && r.device_model === "Linux PC") return true;
+        return false;
+      };
+
       if (dedicatedClicks && dedicatedClicks.length > 0) {
         for (const c of dedicatedClicks) {
+          if (isBotOrDev(c)) continue;
           totalClicksCount++;
           const btnKey = c.button_id || "desconhecido";
           clickMap.set(btnKey, (clickMap.get(btnKey) || 0) + 1);
@@ -171,6 +178,8 @@ export const AdminAnalytics: React.FC = () => {
       const validRows: typeof rows = [];
 
       for (const row of rows || []) {
+        if (isBotOrDev(row)) continue;
+
         if (row.path && row.path.startsWith("click:")) {
           // Se não usou a tabela dedicada, usa o fallback registrado em page_views
           if (!dedicatedClicks || dedicatedClicks.length === 0) {
@@ -439,12 +448,12 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       </div>
 
-      {/* Aviso de exclusão dos acessos dos donos */}
+      {/* Aviso de exclusão dos acessos dos donos e do sistema */}
       <div className="bg-[#384936]/8 border border-[#384936]/20 rounded-lg px-4 py-2.5 flex items-center justify-between text-[12.5px] text-[#20201B]">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
           <span>
-            <strong>Filtro de Administrador Ativo:</strong> Seus acessos (<em>marcosgabriel.saga@gmail.com</em> e <em>jordananadine@gmail.com</em>) estão sendo ignorados para garantir dados 100% reais de visitantes.
+            <strong>Filtro Ativo:</strong> Seus acessos (<em>marcosgabriel.saga@gmail.com</em>, <em>jordananadine@gmail.com</em>), robôs/servidores de deploy e assistentes virtuais estão sendo 100% desconsiderados para exibir dados puramente reais de visitantes.
           </span>
         </div>
       </div>
