@@ -1511,14 +1511,6 @@ export const portfolioProjects: PortfolioProject[] = [
         "height": 1600
       },
       {
-        "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/img_0910.webp",
-        "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/thumbs/img_0910.webp",
-        "alt": "Coquetéis autorais e gastronomia refinada — Detalhe 4",
-        "orientation": "portrait",
-        "width": 1067,
-        "height": 1600
-      },
-      {
         "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/img_1033.webp",
         "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/thumbs/img_1033.webp",
         "alt": "Coquetéis autorais e gastronomia refinada — Detalhe 5",
