@@ -203,18 +203,65 @@ function getCleanReferrer(): string {
   }
 }
 
-function getSessionId(): string {
+/**
+ * Identificador único persistente do aparelho (gravado no localStorage).
+ * Garante que o mesmo celular ou computador seja reconhecido como 1 único aparelho,
+ * mesmo que abra várias páginas ou feche e reabra o navegador.
+ */
+function getDeviceId(): string {
   if (typeof window === "undefined") return "";
   try {
-    let sid = sessionStorage.getItem("cp_analytics_sid");
-    if (!sid) {
-      sid = "s_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now().toString(36);
-      sessionStorage.setItem("cp_analytics_sid", sid);
+    let did = localStorage.getItem("cp_device_id");
+    if (!did) {
+      did = "d_" + Math.random().toString(36).substring(2, 11) + "_" + Date.now().toString(36);
+      localStorage.setItem("cp_device_id", did);
     }
-    return sid;
+    return did;
   } catch {
     return "";
   }
+}
+
+/**
+ * Cooldown de 30 minutos por página para o mesmo aparelho.
+ * Impede que uma mesma pessoa fique alternando entre /links e Home e infle
+ * os números artificialmente a cada clique repetido.
+ */
+function isPageCooldownActive(path: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const key = `cp_cool_${path}`;
+    const lastTime = Number(localStorage.getItem(key) || 0);
+    const now = Date.now();
+    const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutos
+
+    if (now - lastTime < COOLDOWN_MS) {
+      return true; // Cooldown ativo, não duplica registro
+    }
+    localStorage.setItem(key, String(now));
+  } catch {
+    // Fallback silencioso
+  }
+  return false;
+}
+
+/**
+ * Cooldown de 5 minutos por botão para evitar múltiplos cliques acidentais.
+ */
+function isButtonClickThrottled(buttonId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const key = `cp_btn_cool_${buttonId}`;
+    const lastTime = Number(sessionStorage.getItem(key) || 0);
+    const now = Date.now();
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos
+
+    if (now - lastTime < COOLDOWN_MS) {
+      return true;
+    }
+    sessionStorage.setItem(key, String(now));
+  } catch {}
+  return false;
 }
 
 async function getCachedGeo(): Promise<GeoInfo> {
@@ -268,9 +315,12 @@ export function trackPageView(path: string) {
   if (path.startsWith("/admin")) return;
   // Não rastrear acessos do Marcos, Jordana Nadine, assistentes ou bots
   if (isAnalyticsIgnored()) return;
-  // Evitar disparos duplicados consecutivos para a mesma página
+  // Evitar disparos consecutivos para a mesma rota
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
+
+  // Restrição de repetição: não duplica se a mesma pessoa abriu esta página nos últimos 30 min
+  if (isPageCooldownActive(path)) return;
 
   const executeTrack = async () => {
     try {
@@ -293,7 +343,7 @@ export function trackPageView(path: string) {
           city: geo.city || null,
           region: geo.region || null,
           country: geo.country || null,
-          session_id: getSessionId(),
+          session_id: getDeviceId(),
         })
         .then(() => {})
         .catch(() => {});
@@ -318,11 +368,14 @@ export function trackButtonClick(buttonId: string, buttonLabel: string, targetUr
   if (typeof window === "undefined" || !supabase) return;
   if (isAnalyticsIgnored()) return;
 
+  // Evita múltiplos cliques acidentais rápidos no mesmo botão
+  if (isButtonClickThrottled(buttonId)) return;
+
   const executeClickTrack = async () => {
     try {
       const { deviceType, deviceModel } = getDeviceDetails();
       const geo = await getCachedGeo();
-      const sessionId = getSessionId();
+      const deviceId = getDeviceId();
 
       if (isAnalyticsIgnored()) return;
 
@@ -335,7 +388,7 @@ export function trackButtonClick(buttonId: string, buttonLabel: string, targetUr
         device_model: deviceModel,
         city: geo.city || null,
         region: geo.region || null,
-        session_id: sessionId,
+        session_id: deviceId,
       });
 
       // 2. Fallback de segurança para page_views caso a tabela link_clicks ainda não exista
@@ -347,7 +400,7 @@ export function trackButtonClick(buttonId: string, buttonLabel: string, targetUr
           device_model: deviceModel,
           city: geo.city || null,
           region: geo.region || null,
-          session_id: sessionId,
+          session_id: deviceId,
         });
       }
     } catch {

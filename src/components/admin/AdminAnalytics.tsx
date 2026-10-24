@@ -17,21 +17,24 @@ import {
   MousePointerClick,
   MessageCircle,
   Trash2,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { AdminCard } from "./ui";
 
 type Period = "today" | "7d" | "30d" | "all";
 
-interface RecentVisit {
-  id: string;
-  path: string;
+interface RecentVisitorSession {
+  sessionId: string;
+  paths: string[];
+  pageCount: number;
   city?: string;
   region?: string;
   device_model?: string;
   browser?: string;
   referrer?: string;
-  created_at: string;
+  lastActive: string;
 }
 
 interface ButtonClickStat {
@@ -45,18 +48,19 @@ interface ButtonClickStat {
 interface AnalyticsData {
   totalViews: number;
   uniqueVisitors: number;
+  avgPagesPerVisitor: number;
   mobileCount: number;
   desktopCount: number;
-  bioLinksCount: number;
+  bioLinksVisitors: number;
   totalClicks: number;
   buttonClicks: ButtonClickStat[];
-  pages: { path: string; count: number }[];
+  pages: { path: string; views: number; uniqueVisitors: number }[];
   referrers: { source: string; count: number }[];
-  cities: { location: string; count: number }[];
+  cities: { location: string; visitors: number; views: number }[];
   devices: { name: string; count: number }[];
   browsers: { name: string; count: number }[];
   dailyViews: { date: string; label: string; count: number }[];
-  recentVisits: RecentVisit[];
+  recentSessions: RecentVisitorSession[];
 }
 
 const BUTTON_LABELS: Record<string, { label: string; category: "whatsapp" | "link" | "social" }> = {
@@ -80,9 +84,10 @@ export const AdminAnalytics: React.FC = () => {
   const [data, setData] = useState<AnalyticsData>({
     totalViews: 0,
     uniqueVisitors: 0,
+    avgPagesPerVisitor: 0,
     mobileCount: 0,
     desktopCount: 0,
-    bioLinksCount: 0,
+    bioLinksVisitors: 0,
     totalClicks: 0,
     buttonClicks: [],
     pages: [],
@@ -91,7 +96,7 @@ export const AdminAnalytics: React.FC = () => {
     devices: [],
     browsers: [],
     dailyViews: [],
-    recentVisits: [],
+    recentSessions: [],
   });
   const [, startTransition] = useTransition();
 
@@ -210,9 +215,10 @@ export const AdminAnalytics: React.FC = () => {
         setData({
           totalViews: 0,
           uniqueVisitors: 0,
+          avgPagesPerVisitor: 0,
           mobileCount: 0,
           desktopCount: 0,
-          bioLinksCount: 0,
+          bioLinksVisitors: 0,
           totalClicks: 0,
           buttonClicks: [],
           pages: [],
@@ -221,70 +227,140 @@ export const AdminAnalytics: React.FC = () => {
           devices: [],
           browsers: [],
           dailyViews: [],
-          recentVisits: [],
+          recentSessions: [],
         });
         setLoading(false);
         return;
       }
 
-      const uniqueSessions = new Set<string>();
-      let mobile = 0;
-      let desktop = 0;
-      let bioLinks = 0;
-      const pageMap = new Map<string, number>();
-      const refMap = new Map<string, number>();
-      const cityMap = new Map<string, number>();
-      const deviceMap = new Map<string, number>();
-      const browserMap = new Map<string, number>();
+      // =========================================================================
+      // AGRUPAMENTO INTELIGENTE POR APARELHO / VISITANTE ÚNICO
+      // Garante que se uma mesma pessoa navegar por 10 páginas, ela conte como
+      // 1 visitante, 1 celular e 1 pessoa na sua cidade!
+      // =========================================================================
+      interface VisitorSessionData {
+        sessionId: string;
+        deviceType: string;
+        deviceModel: string;
+        browser: string;
+        city: string;
+        referrer: string;
+        paths: string[];
+        lastActive: string;
+      }
+
+      const sessionMap = new Map<string, VisitorSessionData>();
+      const pageViewMap = new Map<string, number>();
+      const pageUniqueMap = new Map<string, Set<string>>();
       const dateMap = new Map<string, number>();
 
       for (const row of validRows) {
-        if (row.session_id) uniqueSessions.add(row.session_id);
+        const sid = row.session_id || `anon_${row.id}`;
 
-        if (row.device === "mobile" || row.device === "tablet") mobile++;
-        else desktop++;
+        // Contagem de páginas
+        pageViewMap.set(row.path, (pageViewMap.get(row.path) || 0) + 1);
+        if (!pageUniqueMap.has(row.path)) {
+          pageUniqueMap.set(row.path, new Set<string>());
+        }
+        pageUniqueMap.get(row.path)!.add(sid);
 
-        if (row.path.startsWith("/links") || row.path.startsWith("/linktree")) bioLinks++;
-
-        pageMap.set(row.path, (pageMap.get(row.path) || 0) + 1);
-
-        const ref = row.referrer || "Direto";
-        refMap.set(ref, (refMap.get(ref) || 0) + 1);
-
-        // Agrupamento de cidades e regiões
-        const loc = row.city
-          ? row.region
-            ? `${row.city}, ${row.region}`
-            : row.city
-          : "Localização em processamento";
-        cityMap.set(loc, (cityMap.get(loc) || 0) + 1);
-
-        // Agrupamento de modelos de aparelhos
-        const dev = row.device_model || (row.device === "mobile" ? "Celular (Android/iOS)" : "Computador (PC/Mac)");
-        deviceMap.set(dev, (deviceMap.get(dev) || 0) + 1);
-
-        // Agrupamento de navegadores / apps
-        const nav = row.browser || "Navegador Web";
-        browserMap.set(nav, (browserMap.get(nav) || 0) + 1);
-
+        // Agrupamento por dia
         if (row.created_at) {
           const d = new Date(row.created_at);
           const dateKey = d.toISOString().split("T")[0];
           dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
         }
+
+        const loc = row.city
+          ? row.region
+            ? `${row.city}, ${row.region}`
+            : row.city
+          : "Localização em processamento";
+
+        const dev = row.device_model || (row.device === "mobile" ? "Celular (Android/iOS)" : "Computador (PC/Mac)");
+        const nav = row.browser || "Navegador Web";
+        const ref = row.referrer || "Direto";
+
+        if (!sessionMap.has(sid)) {
+          sessionMap.set(sid, {
+            sessionId: sid,
+            deviceType: row.device || "desktop",
+            deviceModel: dev,
+            browser: nav,
+            city: loc,
+            referrer: ref,
+            paths: [row.path],
+            lastActive: row.created_at || new Date().toISOString(),
+          });
+        } else {
+          const s = sessionMap.get(sid)!;
+          // Adiciona à trilha de navegação se for diferente da anterior
+          if (s.paths[s.paths.length - 1] !== row.path) {
+            s.paths.push(row.path);
+          }
+          if (s.city === "Localização em processamento" && loc !== "Localização em processamento") {
+            s.city = loc;
+          }
+        }
       }
 
-      const pages = Array.from(pageMap.entries())
-        .map(([path, count]) => ({ path, count }))
-        .sort((a, b) => b.count - a.count);
+      // Agora agrupamos as métricas baseadas no número real de VISITANTES ÚNICOS
+      const uniqueVisitorsCount = sessionMap.size || validRows.length;
+      let mobileCount = 0;
+      let desktopCount = 0;
+      let bioLinksVisitors = 0;
+
+      const cityMap = new Map<string, { visitors: number; views: number }>();
+      const deviceMap = new Map<string, number>();
+      const browserMap = new Map<string, number>();
+      const refMap = new Map<string, number>();
+
+      for (const s of sessionMap.values()) {
+        // Celular vs Desktop por pessoa
+        if (s.deviceType === "mobile" || s.deviceType === "tablet") mobileCount++;
+        else desktopCount++;
+
+        // Visitou a página da Bio (/links)?
+        if (s.paths.some((p) => p.startsWith("/links") || p.startsWith("/linktree"))) {
+          bioLinksVisitors++;
+        }
+
+        // Cidades (1 por visitante!)
+        const currCity = cityMap.get(s.city) || { visitors: 0, views: 0 };
+        currCity.visitors++;
+        currCity.views += s.paths.length;
+        cityMap.set(s.city, currCity);
+
+        // Modelos de Aparelho (1 por celular!)
+        deviceMap.set(s.deviceModel, (deviceMap.get(s.deviceModel) || 0) + 1);
+
+        // Navegadores (1 por visitante!)
+        browserMap.set(s.browser, (browserMap.get(s.browser) || 0) + 1);
+
+        // Origem do tráfego (1 por visitante!)
+        const finalRef = s.referrer === "Interno" ? "Direto" : s.referrer;
+        refMap.set(finalRef, (refMap.get(finalRef) || 0) + 1);
+      }
+
+      const pages = Array.from(pageViewMap.entries())
+        .map(([path, views]) => ({
+          path,
+          views,
+          uniqueVisitors: pageUniqueMap.get(path)?.size || views,
+        }))
+        .sort((a, b) => b.views - a.views);
 
       const referrers = Array.from(refMap.entries())
         .map(([source, count]) => ({ source, count }))
         .sort((a, b) => b.count - a.count);
 
       const cities = Array.from(cityMap.entries())
-        .map(([location, count]) => ({ location, count }))
-        .sort((a, b) => b.count - a.count);
+        .map(([location, stats]) => ({
+          location,
+          visitors: stats.visitors,
+          views: stats.views,
+        }))
+        .sort((a, b) => b.visitors - a.visitors);
 
       const devices = Array.from(deviceMap.entries())
         .map(([name, count]) => ({ name, count }))
@@ -294,7 +370,6 @@ export const AdminAnalytics: React.FC = () => {
         .map(([name, count]) => ({ name, count }))
         .sort((a, b) => b.count - a.count);
 
-      // Ordenar datas cronologicamente para o gráfico
       const dailyViews = Array.from(dateMap.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([date, count]) => {
@@ -306,24 +381,31 @@ export const AdminAnalytics: React.FC = () => {
           };
         });
 
-      // Últimas 15 visitas em tempo real
-      const recentVisits: RecentVisit[] = validRows.slice(0, 15).map((r) => ({
-        id: r.id,
-        path: r.path,
-        city: r.city,
-        region: r.region,
-        device_model: r.device_model,
-        browser: r.browser,
-        referrer: r.referrer,
-        created_at: r.created_at,
-      }));
+      // Últimas sessões de visitantes agrupadas por pessoa com sua trilha
+      const recentSessions: RecentVisitorSession[] = Array.from(sessionMap.values())
+        .slice(0, 15)
+        .map((s) => ({
+          sessionId: s.sessionId,
+          paths: s.paths,
+          pageCount: s.paths.length,
+          city: s.city,
+          device_model: s.deviceModel,
+          browser: s.browser,
+          referrer: s.referrer,
+          lastActive: s.lastActive,
+        }));
+
+      const avgPages = uniqueVisitorsCount > 0
+        ? Math.round((validRows.length / uniqueVisitorsCount) * 10) / 10
+        : 1;
 
       setData({
         totalViews: validRows.length,
-        uniqueVisitors: uniqueSessions.size || validRows.length,
-        mobileCount: mobile,
-        desktopCount: desktop,
-        bioLinksCount: bioLinks,
+        uniqueVisitors: uniqueVisitorsCount,
+        avgPagesPerVisitor: avgPages,
+        mobileCount,
+        desktopCount,
+        bioLinksVisitors,
         totalClicks: totalClicksCount,
         buttonClicks,
         pages,
@@ -332,7 +414,7 @@ export const AdminAnalytics: React.FC = () => {
         devices,
         browsers,
         dailyViews,
-        recentVisits,
+        recentSessions,
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido ao buscar dados.");
@@ -345,9 +427,13 @@ export const AdminAnalytics: React.FC = () => {
     fetchAnalytics(period);
   }, [period]);
 
-  const mobilePercent = data.totalViews > 0 ? Math.round((data.mobileCount / data.totalViews) * 100) : 0;
+  const mobilePercent = data.uniqueVisitors > 0
+    ? Math.round((data.mobileCount / data.uniqueVisitors) * 100)
+    : 0;
   const maxDayCount = Math.max(...data.dailyViews.map((d) => d.count), 1);
-  const conversionRate = data.bioLinksCount > 0 ? Math.round((data.totalClicks / data.bioLinksCount) * 100) : 0;
+  const conversionRate = data.bioLinksVisitors > 0
+    ? Math.round((data.totalClicks / data.bioLinksVisitors) * 100)
+    : 0;
 
   const formatVisitTime = (isoString: string) => {
     try {
@@ -375,6 +461,14 @@ export const AdminAnalytics: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatPathLabel = (path: string) => {
+    if (path === "/") return "Home";
+    if (path === "/links") return "Linktree";
+    if (path === "/blog") return "Blog";
+    if (path.startsWith("/blog/")) return "Post do Blog";
+    return path;
   };
 
   return (
@@ -453,7 +547,7 @@ export const AdminAnalytics: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
           <span>
-            <strong>Filtro Ativo:</strong> Seus acessos (<em>marcosgabriel.saga@gmail.com</em>, <em>jordananadine@gmail.com</em>), robôs/servidores de deploy e assistentes virtuais estão sendo 100% desconsiderados para exibir dados puramente reais de visitantes.
+            <strong>Filtro Ativo:</strong> Seus acessos (<em>marcosgabriel.saga@gmail.com</em>, <em>jordananadine@gmail.com</em>), robôs/servidores de deploy e assistentes virtuais estão sendo 100% desconsiderados. O painel agrupa por <strong>aparelho único</strong> para não inflar visitas duplicadas.
           </span>
         </div>
       </div>
@@ -468,44 +562,44 @@ export const AdminAnalytics: React.FC = () => {
         </div>
       )}
 
-      {/* Cartões Principais (KPIs) */}
+      {/* Cartões Principais (KPIs) com foco em PESSOAS REAIS e APARELHOS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Total de Visualizações */}
+        {/* Visitantes Únicos (Métrica Principal) */}
+        <AdminCard className="p-4 flex items-center justify-between border-l-4 border-l-[#384936]">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#384936]">Visitantes Únicos</span>
+            <div className="text-[26px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
+              {loading ? "..." : data.uniqueVisitors.toLocaleString("pt-BR")}
+            </div>
+            <span className="text-[11px] text-[#171713]/60 flex items-center gap-1 mt-1">
+              <Users size={11} className="text-[#384936]" /> Pessoas / Celulares reais
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-[#384936]/15 text-[#384936] flex items-center justify-center shrink-0">
+            <Users size={18} />
+          </div>
+        </AdminCard>
+
+        {/* Páginas Vistas (Volume Total de Navegação) */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Visualizações</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Páginas Vistas</span>
             <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : data.totalViews.toLocaleString("pt-BR")}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Eye size={11} /> Páginas abertas
-            </span>
-          </div>
-          <div className="w-9 h-9 rounded-full bg-[#384936]/10 text-[#384936] flex items-center justify-center shrink-0">
-            <TrendingUp size={18} />
-          </div>
-        </AdminCard>
-
-        {/* Visitantes Únicos */}
-        <AdminCard className="p-4 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Visitantes Únicos</span>
-            <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
-              {loading ? "..." : data.uniqueVisitors.toLocaleString("pt-BR")}
-            </div>
-            <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Users size={11} /> Pessoas diferentes
+              <Layers size={11} /> Média {data.avgPagesPerVisitor} páginas/visitante
             </span>
           </div>
           <div className="w-9 h-9 rounded-full bg-blue-500/10 text-blue-700 flex items-center justify-center shrink-0">
-            <Users size={18} />
+            <Eye size={18} />
           </div>
         </AdminCard>
 
         {/* % Celular vs Computador */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Acessos Celular</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Aparelhos Celulares</span>
             <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
               {loading ? "..." : `${mobilePercent}%`}
             </div>
@@ -518,15 +612,15 @@ export const AdminAnalytics: React.FC = () => {
           </div>
         </AdminCard>
 
-        {/* Link da Bio (/links) */}
+        {/* Pessoas no Link da Bio (/links) */}
         <AdminCard className="p-4 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Link Bio (/links)</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-[#171713]/50">Pessoas na Bio (/links)</span>
             <div className="text-[24px] font-serif font-bold text-[#171713] leading-tight mt-0.5">
-              {loading ? "..." : data.bioLinksCount.toLocaleString("pt-BR")}
+              {loading ? "..." : data.bioLinksVisitors.toLocaleString("pt-BR")}
             </div>
             <span className="text-[11px] text-[#171713]/45 flex items-center gap-1 mt-1">
-              <Share2 size={11} /> Visitas na Bio
+              <Share2 size={11} /> Visitantes no Linktree
             </span>
           </div>
           <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0">
@@ -569,7 +663,7 @@ export const AdminAnalytics: React.FC = () => {
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <span className="text-[12px] bg-[#384936]/10 text-[#384936] font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5">
               <span>Total: {data.totalClicks} cliques</span>
-              {data.bioLinksCount > 0 && (
+              {data.bioLinksVisitors > 0 && (
                 <span className="text-[#384936]/70">· {conversionRate}% de conversão</span>
               )}
             </span>
@@ -648,7 +742,7 @@ export const AdminAnalytics: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-[15px] font-medium text-[#171713]">Atividade ao longo do período</h3>
-              <p className="text-[12px] text-[#171713]/50">Quantidade de acessos diários</p>
+              <p className="text-[12px] text-[#171713]/50">Quantidade de páginas visualizadas por dia</p>
             </div>
           </div>
 
@@ -675,15 +769,18 @@ export const AdminAnalytics: React.FC = () => {
         </AdminCard>
       )}
 
-      {/* Localização & Aparelhos (As novas seções solicitadas) */}
+      {/* Localização & Aparelhos (Agora agrupados por APARELHO ÚNICO / PESSOA) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Cidades & Regiões */}
         <AdminCard className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
-            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
-              <MapPin size={15} className="text-[#384936]" /> Cidades & Localização
-            </h3>
-            <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
+            <div>
+              <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+                <MapPin size={15} className="text-[#384936]" /> Cidades & Localização
+              </h3>
+              <p className="text-[11px] text-[#171713]/50">Contagem de visitantes únicos por cidade</p>
+            </div>
+            <span className="text-[11.5px] font-semibold text-[#171713]/60">Pessoas</span>
           </div>
 
           {data.cities.length === 0 ? (
@@ -691,17 +788,22 @@ export const AdminAnalytics: React.FC = () => {
           ) : (
             <div className="space-y-2.5 pt-1">
               {data.cities.slice(0, 7).map((c) => {
-                const percent = data.totalViews > 0 ? Math.round((c.count / data.totalViews) * 100) : 0;
+                const percent = data.uniqueVisitors > 0 ? Math.round((c.visitors / data.uniqueVisitors) * 100) : 0;
                 return (
                   <div key={c.location} className="space-y-1">
                     <div className="flex items-center justify-between text-[12.5px]">
-                      <span className="font-medium text-[#171713]/85 truncate max-w-[240px] sm:max-w-xs flex items-center gap-1.5">
+                      <span className="font-medium text-[#171713]/85 truncate max-w-[200px] sm:max-w-xs flex items-center gap-1.5">
                         <Compass size={13} className="text-[#384936]/60 shrink-0" />
                         {c.location}
                       </span>
-                      <span className="text-[#171713]/60 font-mono text-[12px]">
-                        {c.count} <span className="text-[#171713]/40">({percent}%)</span>
-                      </span>
+                      <div className="flex items-center gap-2 text-right shrink-0">
+                        <span className="text-[#171713] font-bold text-[12px]">
+                          {c.visitors} {c.visitors === 1 ? "pessoa" : "pessoas"}
+                        </span>
+                        <span className="text-[#171713]/40 text-[11px]">
+                          ({c.views} {c.views === 1 ? "pág." : "págs."})
+                        </span>
+                      </div>
                     </div>
                     <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-[#384936] h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
@@ -716,10 +818,13 @@ export const AdminAnalytics: React.FC = () => {
         {/* Modelo do Celular & Aparelhos */}
         <AdminCard className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
-            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
-              <Smartphone size={15} className="text-[#384936]" /> Modelos de Aparelho & Dispositivos
-            </h3>
-            <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
+            <div>
+              <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+                <Smartphone size={15} className="text-[#384936]" /> Modelos de Aparelho & Dispositivos
+              </h3>
+              <p className="text-[11px] text-[#171713]/50">Quantidade de aparelhos físicos identificados</p>
+            </div>
+            <span className="text-[11.5px] font-semibold text-[#171713]/60">Aparelhos</span>
           </div>
 
           {data.devices.length === 0 ? (
@@ -727,17 +832,17 @@ export const AdminAnalytics: React.FC = () => {
           ) : (
             <div className="space-y-2.5 pt-1">
               {data.devices.slice(0, 7).map((d) => {
-                const percent = data.totalViews > 0 ? Math.round((d.count / data.totalViews) * 100) : 0;
+                const percent = data.uniqueVisitors > 0 ? Math.round((d.count / data.uniqueVisitors) * 100) : 0;
                 const isMobile = d.name.toLowerCase().includes("iphone") || d.name.toLowerCase().includes("samsung") || d.name.toLowerCase().includes("motorola") || d.name.toLowerCase().includes("android");
                 return (
                   <div key={d.name} className="space-y-1">
                     <div className="flex items-center justify-between text-[12.5px]">
-                      <span className="font-medium text-[#171713]/85 truncate max-w-[240px] sm:max-w-xs flex items-center gap-1.5">
+                      <span className="font-medium text-[#171713]/85 truncate max-w-[200px] sm:max-w-xs flex items-center gap-1.5">
                         {isMobile ? <Smartphone size={13} className="text-emerald-700/70 shrink-0" /> : <Laptop size={13} className="text-blue-700/70 shrink-0" />}
                         {d.name}
                       </span>
-                      <span className="text-[#171713]/60 font-mono text-[12px]">
-                        {d.count} <span className="text-[#171713]/40">({percent}%)</span>
+                      <span className="text-[#171713] font-bold text-[12px]">
+                        {d.count} {d.count === 1 ? "aparelho" : "aparelhos"} <span className="text-[#171713]/40 font-normal">({percent}%)</span>
                       </span>
                     </div>
                     <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
@@ -759,7 +864,7 @@ export const AdminAnalytics: React.FC = () => {
             <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
               <Globe size={15} className="text-[#384936]" /> Páginas Mais Acessadas
             </h3>
-            <span className="text-[11.5px] text-[#171713]/50">Acessos</span>
+            <span className="text-[11.5px] text-[#171713]/50">Pessoas / Acessos</span>
           </div>
 
           {data.pages.length === 0 ? (
@@ -767,15 +872,16 @@ export const AdminAnalytics: React.FC = () => {
           ) : (
             <div className="space-y-2.5 pt-1">
               {data.pages.map((p) => {
-                const percent = data.totalViews > 0 ? Math.round((p.count / data.totalViews) * 100) : 0;
+                const percent = data.totalViews > 0 ? Math.round((p.views / data.totalViews) * 100) : 0;
                 const displayPath = p.path === "/" ? "Home (Página Inicial)" : p.path;
                 return (
                   <div key={p.path} className="space-y-1">
                     <div className="flex items-center justify-between text-[12.5px]">
-                      <span className="font-medium text-[#171713]/85 truncate max-w-[220px] sm:max-w-xs">{displayPath}</span>
-                      <span className="text-[#171713]/60 font-mono text-[12px]">
-                        {p.count} <span className="text-[#171713]/40">({percent}%)</span>
-                      </span>
+                      <span className="font-medium text-[#171713]/85 truncate max-w-[200px] sm:max-w-xs">{displayPath}</span>
+                      <div className="flex items-center gap-2 text-right">
+                        <span className="text-[#171713] font-bold text-[12px]">{p.uniqueVisitors} {p.uniqueVisitors === 1 ? "pessoa" : "pessoas"}</span>
+                        <span className="text-[#171713]/40 text-[11px]">({p.views} views)</span>
+                      </div>
                     </div>
                     <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
                       <div className="bg-[#384936] h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }} />
@@ -793,7 +899,7 @@ export const AdminAnalytics: React.FC = () => {
             <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
               <ExternalLink size={15} className="text-[#384936]" /> Origem do Tráfego & Apps
             </h3>
-            <span className="text-[11.5px] text-[#171713]/50">Visitantes</span>
+            <span className="text-[11.5px] text-[#171713]/50">Pessoas</span>
           </div>
 
           {data.referrers.length === 0 ? (
@@ -801,13 +907,13 @@ export const AdminAnalytics: React.FC = () => {
           ) : (
             <div className="space-y-2.5 pt-1">
               {data.referrers.map((r) => {
-                const percent = data.totalViews > 0 ? Math.round((r.count / data.totalViews) * 100) : 0;
+                const percent = data.uniqueVisitors > 0 ? Math.round((r.count / data.uniqueVisitors) * 100) : 0;
                 return (
                   <div key={r.source} className="space-y-1">
                     <div className="flex items-center justify-between text-[12.5px]">
                       <span className="font-medium text-[#171713]/85">{r.source}</span>
-                      <span className="text-[#171713]/60 font-mono text-[12px]">
-                        {r.count} <span className="text-[#171713]/40">({percent}%)</span>
+                      <span className="text-[#171713] font-bold text-[12px]">
+                        {r.count} {r.count === 1 ? "pessoa" : "pessoas"} <span className="text-[#171713]/40 font-normal">({percent}%)</span>
                       </span>
                     </div>
                     <div className="w-full bg-[#171713]/8 h-1.5 rounded-full overflow-hidden">
@@ -821,14 +927,19 @@ export const AdminAnalytics: React.FC = () => {
         </AdminCard>
       </div>
 
-      {/* Feed em Tempo Real: Últimas Visitas */}
-      {data.recentVisits.length > 0 && (
+      {/* Feed em Tempo Real: Sessões Únicas de Visitantes com Trilha de Navegação */}
+      {data.recentSessions.length > 0 && (
         <AdminCard className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
-            <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
-              <Clock size={15} className="text-[#384936]" /> Últimas Visitas em Tempo Real
-            </h3>
-            <span className="text-[11.5px] text-[#171713]/50">Últimos registros</span>
+            <div>
+              <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
+                <Clock size={15} className="text-[#384936]" /> Últimos Visitantes em Tempo Real
+              </h3>
+              <p className="text-[11.5px] text-[#171713]/50">
+                Cada linha representa 1 pessoa/celular com a sequência de páginas que ela explorou
+              </p>
+            </div>
+            <span className="text-[11.5px] text-[#171713]/50 font-medium">Sessões recentes</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -836,48 +947,64 @@ export const AdminAnalytics: React.FC = () => {
               <thead>
                 <tr className="border-b border-[#171713]/8 text-[#171713]/50 font-medium">
                   <th className="py-2 pr-3">Horário</th>
-                  <th className="py-2 px-3">Página</th>
-                  <th className="py-2 px-3">Cidade / Região</th>
                   <th className="py-2 px-3">Aparelho / Modelo</th>
-                  <th className="py-2 px-3">Navegador / App</th>
+                  <th className="py-2 px-3">Cidade / Região</th>
+                  <th className="py-2 px-3">Trilha Navegada pelo Visitante</th>
+                  <th className="py-2 px-3">App / Navegador</th>
                   <th className="py-2 pl-3">Origem</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#171713]/5">
-                {data.recentVisits.map((v) => (
-                  <tr key={v.id} className="hover:bg-[#171713]/2 transition-colors">
-                    <td className="py-2.5 pr-3 font-mono text-[11.5px] text-[#171713]/60 whitespace-nowrap">
-                      {formatVisitTime(v.created_at)}
+                {data.recentSessions.map((s) => (
+                  <tr key={s.sessionId} className="hover:bg-[#171713]/2 transition-colors">
+                    <td className="py-3 pr-3 font-mono text-[11.5px] text-[#171713]/60 whitespace-nowrap">
+                      {formatVisitTime(s.lastActive)}
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-[#171713] whitespace-nowrap">
-                      {v.path === "/" ? "Home" : v.path}
+                    <td className="py-3 px-3 font-semibold text-[#171713] whitespace-nowrap">
+                      {s.device_model || "Desconhecido"}
                     </td>
-                    <td className="py-2.5 px-3 text-[#171713]/80 whitespace-nowrap">
-                      {v.city ? (
+                    <td className="py-3 px-3 text-[#171713]/80 whitespace-nowrap">
+                      {s.city ? (
                         <span className="inline-flex items-center gap-1">
                           <MapPin size={11} className="text-[#384936]" />
-                          {v.city}{v.region ? ` - ${v.region}` : ""}
+                          {s.city}
                         </span>
                       ) : (
                         <span className="text-[#171713]/40">Não identificada</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-[#171713]/80 whitespace-nowrap">
-                      {v.device_model || "Desconhecido"}
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {s.paths.map((p, idx) => (
+                          <React.Fragment key={idx}>
+                            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#384936]/10 text-[#384936] border border-[#384936]/15">
+                              {formatPathLabel(p)}
+                            </span>
+                            {idx < s.paths.length - 1 && (
+                              <ArrowRight size={10} className="text-[#171713]/30 shrink-0" />
+                            )}
+                          </React.Fragment>
+                        ))}
+                        {s.pageCount > 1 && (
+                          <span className="text-[10px] text-[#171713]/40 ml-1">
+                            ({s.pageCount} páginas)
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-3 px-3 whitespace-nowrap">
                       <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                        v.browser?.includes("Instagram")
+                        s.browser?.includes("Instagram")
                           ? "bg-pink-100 text-pink-800"
-                          : v.browser?.includes("WhatsApp")
+                          : s.browser?.includes("WhatsApp")
                           ? "bg-emerald-100 text-emerald-800"
                           : "bg-[#171713]/5 text-[#171713]/70"
                       }`}>
-                        {v.browser || "Navegador"}
+                        {s.browser || "Navegador"}
                       </span>
                     </td>
-                    <td className="py-2.5 pl-3 text-[#171713]/60 whitespace-nowrap">
-                      {v.referrer || "Direto"}
+                    <td className="py-3 pl-3 text-[#171713]/60 whitespace-nowrap">
+                      {s.referrer || "Direto"}
                     </td>
                   </tr>
                 ))}
