@@ -1482,10 +1482,50 @@ export const portfolioProjects: PortfolioProject[] = [
     "category": "gastronomia",
     "categoryLabel": "Gastronomia & Experiências",
     "description": "Coquetelaria autoral, ambiente sofisticado e detalhes refinados capturados na luz ambiente ideal.",
-    "coverImage": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/24roll.webp",
+    "coverImage": "/portfolio/notari/notari-coquetel-coronita.webp",
     "location": "Bar & Gastronomia",
     "year": "2024",
     "images": [
+      {
+        "src": "/portfolio/notari/notari-coquetel-coronita.webp",
+        "thumbnail": "/portfolio/notari/thumbs/notari-coquetel-coronita.webp",
+        "alt": "Coquetel com cerveja Coronita e letreiro neon Notari iluminado ao fundo",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 1067
+      },
+      {
+        "src": "/portfolio/notari/notari-bife-macarico.webp",
+        "thumbnail": "/portfolio/notari/thumbs/notari-bife-macarico.webp",
+        "alt": "Corte nobre com manteiga de ervas sendo flambado no maçarico no Notari",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 1219
+      },
+      {
+        "src": "/portfolio/notari/notari-prato-bife-batatas.webp",
+        "thumbnail": "/portfolio/notari/thumbs/notari-prato-bife-batatas.webp",
+        "alt": "Corte nobre com batatas rústicas douradas, farofa e vinagrete em prato de cerâmica",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 1067
+      },
+      {
+        "src": "/portfolio/notari/notari-gin-tonica.webp",
+        "thumbnail": "/portfolio/notari/thumbs/notari-gin-tonica.webp",
+        "alt": "Taça de Gin Tônica com fatia de limão e gelo em iluminação noturna sofisticada",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 1067
+      },
+      {
+        "src": "/portfolio/notari/notari-drink-tropical-redbull.webp",
+        "thumbnail": "/portfolio/notari/thumbs/notari-drink-tropical-redbull.webp",
+        "alt": "Drink Tropical com Red Bull Tropical Edition no balcão do bar Notari",
+        "orientation": "landscape",
+        "width": 1600,
+        "height": 1067
+      },
       {
         "src": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/20.webp",
         "thumbnail": "https://media.umcaracaramelo.com.br/clique-e-poesia/portfolio/notari/thumbs/20.webp",

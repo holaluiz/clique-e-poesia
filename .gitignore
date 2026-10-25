@@ -35,4 +35,5 @@ dist-ssr/
 # Temporary / extraction artifacts
 tmp/
 cliqueepoesia-main/
-portfolio/
+/portfolio/
+!public/portfolio/
