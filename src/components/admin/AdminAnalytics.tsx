@@ -381,9 +381,10 @@ export const AdminAnalytics: React.FC = () => {
           };
         });
 
-      // Últimas sessões de visitantes agrupadas por pessoa com sua trilha
+      // Últimas sessões de visitantes ordenadas cronologicamente da mais recente para a mais antiga
       const recentSessions: RecentVisitorSession[] = Array.from(sessionMap.values())
-        .slice(0, 15)
+        .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())
+        .slice(0, 50)
         .map((s) => ({
           sessionId: s.sessionId,
           paths: s.paths,
@@ -438,11 +439,104 @@ export const AdminAnalytics: React.FC = () => {
   const formatVisitTime = (isoString: string) => {
     try {
       const d = new Date(isoString);
-      return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      if (isNaN(d.getTime())) return { time: "--:--", relative: "" };
+      const timeStr = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const diffMs = Date.now() - d.getTime();
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMin / 60);
+
+      let relative = "";
+      if (diffMin >= 0 && diffMin < 1) {
+        relative = "agora";
+      } else if (diffMin < 60) {
+        relative = `há ${diffMin} min`;
+      } else if (diffHours < 24 && d.toDateString() === new Date().toDateString()) {
+        relative = `há ${diffHours}h`;
+      }
+      return { time: timeStr, relative };
     } catch {
-      return "";
+      return { time: "--:--", relative: "" };
     }
   };
+
+  // Agrupa as sessões recentes de visitantes por dia para fácil localização
+  const groupedSessions = React.useMemo(() => {
+    const map = new Map<string, RecentVisitorSession[]>();
+
+    for (const session of data.recentSessions) {
+      let dateKey = "desconhecido";
+      try {
+        const d = new Date(session.lastActive);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          dateKey = `${y}-${m}-${day}`;
+        }
+      } catch {
+        dateKey = "desconhecido";
+      }
+
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(session);
+    }
+
+    const sortedDates = Array.from(map.keys()).sort((a, b) => b.localeCompare(a));
+
+    const today = new Date();
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+
+    return sortedDates.map((dateKey) => {
+      const sessions = map.get(dateKey)!;
+      let title = dateKey;
+      let subtitle = "";
+      let isToday = false;
+
+      if (dateKey === "desconhecido") {
+        title = "Data não identificada";
+      } else {
+        try {
+          const [y, m, d] = dateKey.split("-").map(Number);
+          const dateObj = new Date(y, m - 1, d);
+          const formatted = dateObj.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          });
+          const weekday = dateObj.toLocaleDateString("pt-BR", { weekday: "long" });
+          const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+          if (dateKey === todayKey) {
+            title = "Hoje";
+            subtitle = `${capitalizedWeekday}, ${formatted}`;
+            isToday = true;
+          } else if (dateKey === yesterdayKey) {
+            title = "Ontem";
+            subtitle = `${capitalizedWeekday}, ${formatted}`;
+          } else {
+            title = formatted;
+            subtitle = capitalizedWeekday;
+          }
+        } catch {
+          title = dateKey;
+        }
+      }
+
+      return {
+        dateKey,
+        title,
+        subtitle,
+        isToday,
+        sessions,
+      };
+    });
+  }, [data.recentSessions]);
 
   const handleResetMetrics = async () => {
     if (!supabase) return;
@@ -927,19 +1021,21 @@ export const AdminAnalytics: React.FC = () => {
         </AdminCard>
       </div>
 
-      {/* Feed em Tempo Real: Sessões Únicas de Visitantes com Trilha de Navegação */}
+      {/* Feed em Tempo Real: Sessões Únicas de Visitantes com Trilha Separadas por Data */}
       {data.recentSessions.length > 0 && (
-        <AdminCard className="p-5 space-y-3">
+        <AdminCard className="p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-[#171713]/10 pb-2.5">
             <div>
               <h3 className="text-[14px] font-medium text-[#171713] flex items-center gap-1.5">
                 <Clock size={15} className="text-[#384936]" /> Últimos Visitantes em Tempo Real
               </h3>
               <p className="text-[11.5px] text-[#171713]/50">
-                Cada linha representa 1 pessoa/celular com a sequência de páginas que ela explorou
+                Sessões agrupadas e separadas por data, com a sequência de páginas navegadas por cada visitante
               </p>
             </div>
-            <span className="text-[11.5px] text-[#171713]/50 font-medium">Sessões recentes</span>
+            <span className="text-[11.5px] text-[#171713]/50 font-medium">
+              {data.recentSessions.length} {data.recentSessions.length === 1 ? "sessão recente" : "sessões recentes"}
+            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -954,59 +1050,108 @@ export const AdminAnalytics: React.FC = () => {
                   <th className="py-2 pl-3">Origem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#171713]/5">
-                {data.recentSessions.map((s) => (
-                  <tr key={s.sessionId} className="hover:bg-[#171713]/2 transition-colors">
-                    <td className="py-3 pr-3 font-mono text-[11.5px] text-[#171713]/60 whitespace-nowrap">
-                      {formatVisitTime(s.lastActive)}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-[#171713] whitespace-nowrap">
-                      {s.device_model || "Desconhecido"}
-                    </td>
-                    <td className="py-3 px-3 text-[#171713]/80 whitespace-nowrap">
-                      {s.city ? (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin size={11} className="text-[#384936]" />
-                          {s.city}
-                        </span>
-                      ) : (
-                        <span className="text-[#171713]/40">Não identificada</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {s.paths.map((p, idx) => (
-                          <React.Fragment key={idx}>
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#384936]/10 text-[#384936] border border-[#384936]/15">
-                              {formatPathLabel(p)}
+              <tbody>
+                {groupedSessions.map((group) => (
+                  <React.Fragment key={group.dateKey}>
+                    {/* Faixa Separadora de Data */}
+                    <tr className="bg-[#384936]/[0.05] border-t border-b border-[#171713]/10">
+                      <td colSpan={6} className="py-2 px-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-flex items-center justify-center p-1 rounded-md ${
+                                group.isToday
+                                  ? "bg-[#384936] text-[#FAF7F2]"
+                                  : "bg-[#171713]/10 text-[#171713]/70"
+                              }`}
+                            >
+                              <Calendar size={12} />
                             </span>
-                            {idx < s.paths.length - 1 && (
-                              <ArrowRight size={10} className="text-[#171713]/30 shrink-0" />
+                            <span className="font-semibold text-[#171713] text-[13px]">
+                              {group.title}
+                            </span>
+                            {group.subtitle && (
+                              <span className="text-[11.5px] text-[#171713]/50">
+                                • {group.subtitle}
+                              </span>
                             )}
-                          </React.Fragment>
-                        ))}
-                        {s.pageCount > 1 && (
-                          <span className="text-[10px] text-[#171713]/40 ml-1">
-                            ({s.pageCount} páginas)
+                          </div>
+                          <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-white border border-[#171713]/10 text-[#171713]/60 shadow-xs">
+                            {group.sessions.length} {group.sessions.length === 1 ? "visitante" : "visitantes"}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                        s.browser?.includes("Instagram")
-                          ? "bg-pink-100 text-pink-800"
-                          : s.browser?.includes("WhatsApp")
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-[#171713]/5 text-[#171713]/70"
-                      }`}>
-                        {s.browser || "Navegador"}
-                      </span>
-                    </td>
-                    <td className="py-3 pl-3 text-[#171713]/60 whitespace-nowrap">
-                      {s.referrer || "Direto"}
-                    </td>
-                  </tr>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Linhas das Visitas daquela Data */}
+                    {group.sessions.map((s) => {
+                      const timeInfo = formatVisitTime(s.lastActive);
+                      return (
+                        <tr key={s.sessionId} className="border-b border-[#171713]/5 hover:bg-[#171713]/2 transition-colors">
+                          <td className="py-3 pr-3 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="font-mono text-[12px] font-semibold text-[#171713]">
+                                {timeInfo.time}
+                              </span>
+                              {timeInfo.relative && (
+                                <span className="text-[10px] text-[#384936] font-medium">
+                                  {timeInfo.relative}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-[#171713] whitespace-nowrap">
+                            {s.device_model || "Desconhecido"}
+                          </td>
+                          <td className="py-3 px-3 text-[#171713]/80 whitespace-nowrap">
+                            {s.city ? (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin size={11} className="text-[#384936]" />
+                                {s.city}
+                              </span>
+                            ) : (
+                              <span className="text-[#171713]/40">Não identificada</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {s.paths.map((p, idx) => (
+                                <React.Fragment key={idx}>
+                                  <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-[#384936]/10 text-[#384936] border border-[#384936]/15">
+                                    {formatPathLabel(p)}
+                                  </span>
+                                  {idx < s.paths.length - 1 && (
+                                    <ArrowRight size={10} className="text-[#171713]/30 shrink-0" />
+                                  )}
+                                </React.Fragment>
+                              ))}
+                              {s.pageCount > 1 && (
+                                <span className="text-[10px] text-[#171713]/40 ml-1">
+                                  ({s.pageCount} páginas)
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                                s.browser?.includes("Instagram")
+                                  ? "bg-pink-100 text-pink-800"
+                                  : s.browser?.includes("WhatsApp")
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-[#171713]/5 text-[#171713]/70"
+                              }`}
+                            >
+                              {s.browser || "Navegador"}
+                            </span>
+                          </td>
+                          <td className="py-3 pl-3 text-[#171713]/60 whitespace-nowrap">
+                            {s.referrer || "Direto"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
